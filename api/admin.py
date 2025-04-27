@@ -11,5 +11,5 @@ async def run_migrations(password: str):
 
 
 @router.get("/pending-migrations")
-def check_pending_migrations():
+async def check_pending_migrations():
     return migrations_service.get_pending_migrations()
