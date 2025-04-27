@@ -1,11 +1,16 @@
 name: Run Python Tests
 
-on: pull_request
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   pytest:
     name: Run Pytest Ubuntu
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://postgres:local_password@localhost:5432/local_db"
+      MIGRATIONS_PWD: "any-password"
 
     steps:
       - uses: actions/checkout@v4
