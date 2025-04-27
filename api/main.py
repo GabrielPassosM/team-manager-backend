@@ -40,7 +40,7 @@ def _verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
 
 
 @app.get("/docs", include_in_schema=False)
-async def get_swagger_ui_html(
+async def get_swagger_documentation(
     credentials: HTTPBasicCredentials = Depends(_verify_credentials),
 ):
     return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
