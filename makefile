@@ -26,3 +26,6 @@ run-project: run-migrations
 run-tests: services-up wait-for-pg
 	pytest ./tests
 	make services-down
+
+run-tests-watch: services-up wait-for-pg
+	ptw
