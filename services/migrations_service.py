@@ -43,7 +43,7 @@ def get_pending_migrations():
         else:
             revisions = []
             for rev in script.walk_revisions():
-                if rev.revision > current_rev:
+                if not current_rev or rev.revision > current_rev:
                     revisions.append(
                         {
                             "revision": rev.revision,
