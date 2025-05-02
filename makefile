@@ -29,3 +29,7 @@ run-tests: services-up wait-for-pg
 
 run-tests-watch: services-up wait-for-pg
 	ptw
+
+reset-docker:
+	docker rm -v -f postgres-dev
+	docker compose -f infra/compose.yaml up
