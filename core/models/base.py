@@ -1,15 +1,14 @@
 from datetime import datetime
-
+from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
 from sqlalchemy import Column, DateTime
 
-from libs.base_types.uuid import BaseUUID
 from libs.datetime import utcnow
 
 
 class BaseTable(SQLModel):
-    id: BaseUUID = Field(
-        default_factory=BaseUUID,
+    id: UUID = Field(
+        default_factory=uuid4,
         primary_key=True,
     )
     deleted: bool = Field(default=False, index=True)
@@ -21,5 +20,5 @@ class BaseTable(SQLModel):
         default_factory=utcnow, sa_column=Column(DateTime(timezone=True))
     )
 
-    created_by: BaseUUID | None = Field(nullable=True, default=None)
-    updated_by: BaseUUID | None = Field(nullable=True, default=None)
+    created_by: UUID | None = Field(nullable=True, default=None)
+    updated_by: UUID | None = Field(nullable=True, default=None)

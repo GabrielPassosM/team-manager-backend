@@ -1,8 +1,8 @@
 from bounded_contexts.team.models import Team
 from bounded_contexts.team.schemas import TeamCreate
 from core.repo import BaseRepo
-from libs.base_types.uuid import BaseUUID
 
+from uuid import UUID
 from sqlmodel import select
 
 
@@ -21,7 +21,7 @@ class TeamWriteRepo(BaseRepo):
 
 
 class TeamReadRepo(BaseRepo):
-    def get_by_id(self, team_id: BaseUUID) -> Team:
+    def get_by_id(self, team_id: UUID) -> Team:
         return self.session.exec(
             select(Team).where(
                 Team.id == team_id,

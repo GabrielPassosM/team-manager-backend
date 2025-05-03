@@ -1,9 +1,9 @@
 from fastapi import APIRouter
+from uuid import UUID
 
 from bounded_contexts.team import service
 from bounded_contexts.team.models import Team
 from bounded_contexts.team.schemas import TeamCreate
-from libs.base_types.uuid import BaseUUID
 
 
 router = APIRouter(prefix="/teams", tags=["Team"])
@@ -17,10 +17,10 @@ async def create_team(
 
 
 @router.get("/{team_id}", status_code=200)
-async def get_team(team_id: BaseUUID) -> Team:
+async def get_team(team_id: UUID) -> Team:
     return service.get_team_by_id(team_id)
 
 
 @router.delete("/{team_id}", status_code=204)
-async def delete_team(team_id: BaseUUID) -> None:
+async def delete_team(team_id: UUID) -> None:
     return service.delete_team(team_id)
