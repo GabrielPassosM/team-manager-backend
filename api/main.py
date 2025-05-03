@@ -3,7 +3,8 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
 
-from api import admin
+from api.admin import router as admin_router
+from bounded_contexts.team.routers import router as team_router
 from core import settings
 
 security = HTTPBasic()
@@ -16,7 +17,8 @@ app = FastAPI(
     openapi_url=None,
 )
 
-app.include_router(admin.router)
+app.include_router(admin_router)
+app.include_router(team_router)
 
 
 @app.get("/", status_code=200)
