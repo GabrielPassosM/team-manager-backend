@@ -12,7 +12,9 @@ def test_run_migrations():
     assert response.json() == {"message": "Migrations applied successfully"}
 
 
-def test_get_pendin_migrations():
+def test_get_pending_migrations():
     response = client.get(f"/admin/pending-migrations")
     assert response.status_code == 200
-    assert response.json() == {"current_revision": None, "pending": False}
+    response_data = response.json()
+    assert "current_revision" in response_data
+    assert response_data["pending"] == False
