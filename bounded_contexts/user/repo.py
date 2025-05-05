@@ -1,0 +1,51 @@
+from bounded_contexts.user.models import User
+from bounded_contexts.user.schemas import UserCreate
+from core.repo import BaseRepo
+
+from uuid import UUID
+from sqlmodel import select
+
+
+class UserWriteRepo(BaseRepo):
+    def save(self, user_data: UserCreate, hashed_password: str) -> User:
+        user_data = user_data.model_dump()
+        user_data["hashed_password"] = hashed_password
+        user_data.pop("password")
+
+        user = User(**user_data)
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+    def delete(self, user: User) -> None:
+        user.deleted = True
+        self.session.merge(user)
+        self.session.commit()
+
+
+class UserReadRepo(BaseRepo):
+    def get_by_id(self, user_id: UUID) -> User:
+        return self.session.exec(
+            select(User).where(
+                User.id == user_id,
+                User.deleted == False,
+            )
+        ).first()
+
+    def get_all_by_team_id(self, team_id: UUID) -> list[User]:
+        return self.session.exec(
+            select(User).where(
+                User.team_id == team_id,
+                User.deleted == False,
+            )
+        ).all()
+
+    def get_by_email_and_team(self, team_id: UUID, email: str) -> User:
+        return self.session.exec(
+            select(User).where(
+                User.team_id == team_id,
+                User.email == email,
+                User.deleted == False,
+            )
+        ).first()

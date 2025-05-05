@@ -11,6 +11,8 @@ jobs:
     env:
       DATABASE_URL: "postgresql://postgres:local_password@localhost:5432/local_db"
       MIGRATIONS_PWD: "any-password"
+      SALT_ROUNDS: 4
+      PASSWORD_PEPPER: "any-pepper"
 
     steps:
       - uses: actions/checkout@v4
