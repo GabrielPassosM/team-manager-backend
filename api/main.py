@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from api.admin import router as admin_router
 from bounded_contexts.team.routers import router as team_router
+from bounded_contexts.user.routers import router as user_router
 from core import settings
 
 security = HTTPBasic()
@@ -19,6 +20,7 @@ app = FastAPI(
 
 app.include_router(admin_router)
 app.include_router(team_router)
+app.include_router(user_router)
 
 
 @app.get("/", status_code=200)
