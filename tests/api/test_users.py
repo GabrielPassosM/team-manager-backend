@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 
 from api.main import app
@@ -10,7 +12,7 @@ def test_create_user(mock_team):
     data = {
         "team_id": str(mock_team.id),
         "name": "Lionel Messi",
-        "email": "messi@fcb.com",
+        "email": f"{uuid4()}@fcb.com",
         "password": "world-champion",
     }
     response = client.post("/users", json=data)
@@ -23,7 +25,7 @@ def test_error_create_user_with_long_password(mock_team):
     data = {
         "team_id": str(mock_team.id),
         "name": "Dummy",
-        "email": "dummy@fcb.com",
+        "email": f"{uuid4()}@fcb.com",
         "password": "1234" * 19,  # 76 characters
     }
     response = client.post("/users", json=data)

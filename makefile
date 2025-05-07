@@ -23,12 +23,8 @@ run-migrations: services-up wait-for-pg
 run-project: run-migrations
 	fastapi dev ./api/main.py
 
-run-tests: run-migrations
+run-tests:
 	pytest ./tests
-	make services-down
-
-run-tests-watch: services-up wait-for-pg
-	ptw
 
 reset-docker:
 	docker rm -v -f postgres-dev
