@@ -4,23 +4,24 @@ from bounded_contexts.team.repo import TeamWriteRepo, TeamReadRepo
 from bounded_contexts.team.schemas import TeamCreate
 
 from uuid import UUID
+from sqlmodel import Session
 
 
-def create_team(team_data: TeamCreate) -> Team:
-    return TeamWriteRepo().save(team_data)
+def create_team(team_data: TeamCreate, session: Session) -> Team:
+    return TeamWriteRepo(session=session).save(team_data)
 
 
-def get_team_by_id(team_id: UUID) -> Team:
-    team = TeamReadRepo().get_by_id(team_id)
+def get_team_by_id(team_id: UUID, session: Session) -> Team:
+    team = TeamReadRepo(session=session).get_by_id(team_id)
     if not team:
         raise TeamNotFound()
 
     return team
 
 
-def delete_team(team_id: UUID) -> None:
-    team = TeamReadRepo().get_by_id(team_id)
+def delete_team(team_id: UUID, session: Session) -> None:
+    team = TeamReadRepo(session=session).get_by_id(team_id)
     if not team:
         raise TeamNotFound
 
-    TeamWriteRepo().delete(team)
+    TeamWriteRepo(session=session).delete(team)
