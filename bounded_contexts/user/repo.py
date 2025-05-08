@@ -41,10 +41,9 @@ class UserReadRepo(BaseRepo):
             )
         ).all()
 
-    def get_by_email_and_team(self, team_id: UUID, email: str) -> User:
+    def get_by_email(self, email: str) -> User:
         return self.session.exec(
             select(User).where(
-                User.team_id == team_id,
                 User.email == email,
                 User.deleted == False,
             )
