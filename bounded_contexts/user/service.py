@@ -24,9 +24,7 @@ def create_user(user_data: UserCreate, session: Session) -> User:
     if not TeamReadRepo(session=session).get_by_id(user_data.team_id):
         raise TeamNotFound()
 
-    if UserReadRepo(session=session).get_by_email_and_team(
-        user_data.team_id, user_data.email
-    ):
+    if UserReadRepo(session=session).get_by_email(user_data.email):
         raise EmailAlreadyInUse()
 
     hashed_password = _hash_password(user_data.password)

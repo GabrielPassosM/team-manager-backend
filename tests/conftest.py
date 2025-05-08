@@ -11,6 +11,7 @@ from infra.database import get_session
 from tests.database import get_testing_session, init_test_db, remove_test_db
 
 
+# -------- DB SETUP --------
 @pytest.fixture(autouse=True)
 def override_dependency():
     app.dependency_overrides[get_session] = get_testing_session
@@ -25,6 +26,7 @@ def setup_database():
     remove_test_db()
 
 
+# ------- TEST FIXTURES --------
 @pytest.fixture(scope="function")
 def mock_team():
     mock = Team(
@@ -37,6 +39,23 @@ def mock_team():
     session.commit()
     session.refresh(mock)
     yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_team_gen(mock_team):
+    def _make_mock():
+        mock = Team(
+            name="FC Barcelona",
+            emblem_url="https://example.com/image.jpg",
+            foundation_date=date(2023, 1, 1),
+        )
+        session = next(get_testing_session())
+        session.add(mock)
+        session.commit()
+        session.refresh(mock)
+        return mock
+
+    yield _make_mock
 
 
 @pytest.fixture(scope="function")

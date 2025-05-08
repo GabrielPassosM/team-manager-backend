@@ -33,9 +33,12 @@ def test_error_create_user_with_long_password(mock_team):
     assert response.json()["detail"] == "Senha deve ter no máximo 72 caracteres"
 
 
-def test_error_create_duplicate_user_email(mock_team):
+def test_error_create_duplicate_user_email(mock_team_gen):
+    team1 = mock_team_gen()
+    team2 = mock_team_gen()
+
     data = {
-        "team_id": str(mock_team.id),
+        "team_id": str(team1.id),
         "name": "Lionel Messi",
         "email": "messi@fcb.com",
         "password": "world-champion",
@@ -44,7 +47,7 @@ def test_error_create_duplicate_user_email(mock_team):
     assert response.status_code == 201
 
     data = {
-        "team_id": str(mock_team.id),
+        "team_id": str(team2.id),
         "name": "Neymar Jr.",
         "email": "messi@fcb.com",
         "password": "neymar",

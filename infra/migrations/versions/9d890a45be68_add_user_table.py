@@ -43,7 +43,7 @@ def upgrade() -> None:
         sa.Column(
             "is_admin", sa.Boolean(), nullable=False, server_default=sa.text("false")
         ),
-        sa.UniqueConstraint("team_id", "email", name="uq_user_email"),
+        sa.UniqueConstraint("email", name="uq_user_email"),
     )
     op.create_index("ix_user_deleted", "user", ["deleted"])
     op.create_index("ix_user_email", "user", ["email"])
