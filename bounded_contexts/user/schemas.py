@@ -19,3 +19,16 @@ class UserCreate(BaseModel):
             raise PasswordToLong()
 
         return value
+
+
+class UserLoginResponse(BaseModel):
+    id: UUID
+    name: str
+    email: str
+    team_id: UUID
+    is_admin: bool
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    user: UserLoginResponse

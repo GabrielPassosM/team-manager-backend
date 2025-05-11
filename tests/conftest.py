@@ -6,7 +6,7 @@ import pytest
 from api.main import app
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
-from bounded_contexts.user.service import _hash_password
+from core.services.password import hash_password
 from infra.database import get_session
 from tests.database import get_testing_session, init_test_db, remove_test_db
 
@@ -65,7 +65,7 @@ def mock_user(mock_team):
         team_id=mock_team.id,
         name="Test User",
         email=f"{id_email}@gmail.com",
-        hashed_password=_hash_password("1234"),
+        hashed_password=hash_password("1234"),
     )
     session = next(get_testing_session())
     session.add(mock)
@@ -77,12 +77,18 @@ def mock_user(mock_team):
 
 @pytest.fixture(scope="function")
 def mock_user_gen(mock_team):
-    def _make_mock():
+
+    def _make_mock(
+        name=None,
+        email=None,
+        password="1234",
+        team_id=None,
+    ):
         mock = User(
-            team_id=mock_team.id,
-            name="Test User",
-            email=f"{uuid4()}@gmail.com",
-            hashed_password=_hash_password("1234"),
+            team_id=team_id or mock_team.id,
+            name=name or "Test User",
+            email=email or f"{uuid4()}@gmail.com",
+            hashed_password=hash_password(password),
         )
         session = next(get_testing_session())
         session.add(mock)
