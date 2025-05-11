@@ -19,3 +19,10 @@ class UserNotFound(HTTPException):
 class EmailAlreadyInUse(HTTPException):
     status_code = 400
     detail = "Já existe um usuário com este e-mail cadastrado neste time no sistema"
+
+
+@dataclass
+class LoginUnauthorized(HTTPException):
+    status_code = 401
+    detail = "Email ou senha incorretos"
+    headers = {"WWW-Authenticate": "Bearer"}

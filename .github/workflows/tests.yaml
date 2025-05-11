@@ -13,6 +13,7 @@ jobs:
       MIGRATIONS_PWD: "any-password"
       SALT_ROUNDS: 4
       PASSWORD_PEPPER: "any-pepper"
+      JWT_KEY: "any-jwt"
 
     steps:
       - uses: actions/checkout@v4

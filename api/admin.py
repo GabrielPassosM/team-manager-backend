@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from services import migrations_service
+from core.services import migrations_service
 
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
