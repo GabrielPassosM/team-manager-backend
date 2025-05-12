@@ -20,7 +20,10 @@ wait-for-pg:
 run-migrations: services-up wait-for-pg
 	alembic -c infra/alembic.ini upgrade head
 
-run-project: run-migrations
+populate-dev-db:
+	python -m infra.scripts.populate_dev_db
+
+run-project: run-migrations populate-dev-db
 	fastapi dev ./api/main.py
 
 run-tests:
