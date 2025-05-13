@@ -25,7 +25,10 @@ class UserWriteRepo(BaseRepo):
 
 
 class UserReadRepo(BaseRepo):
-    def get_by_id(self, user_id: UUID) -> User:
+    def get_by_id(self, user_id: UUID | str) -> User:
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+
         return self.session.exec(
             select(User).where(
                 User.id == user_id,

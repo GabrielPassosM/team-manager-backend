@@ -102,11 +102,13 @@ def test_login_success(mock_user_gen):
     assert "access_token" in response_json
 
     user_response = response_json["user"]
-    assert user_response["id"] == str(user.id)
-    assert user_response["name"] == user.name
-    assert user_response["email"] == user.email
-    assert user_response["team_id"] == str(user.team_id)
-    assert user_response["is_admin"] == user.is_admin
+    assert user_response == {
+        "email": user.email,
+        "id": str(user.id),
+        "is_admin": user.is_admin,
+        "name": user.name,
+        "team_id": str(user.team_id),
+    }
 
 
 def test_login_fail(mock_user_gen):
