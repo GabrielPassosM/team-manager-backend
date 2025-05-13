@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 from uuid import UUID
@@ -19,7 +19,12 @@ def login(
     session: Session = Depends(get_session),
 ) -> LoginResponse:
     user = service.authenticate_user(form_data.username, form_data.password, session)
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "team_id": str(user.team_id),
+        }
+    )
 
     return LoginResponse(
         access_token=access_token,
