@@ -19,12 +19,13 @@ app = FastAPI(
     openapi_url=None,
 )
 
+origins = [
+    "http://localhost:5173",
+    "https://team-manager-frontend.netlify.app",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://team-manager-frontend.netlify.app",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
