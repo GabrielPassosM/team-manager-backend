@@ -11,7 +11,6 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-from libs.datetime import utcnow
 
 # revision identifiers, used by Alembic.
 revision: str = "9d890a45be68"
@@ -21,6 +20,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    from libs.datetime import utcnow
+
     op.create_table(
         "user",
         sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),

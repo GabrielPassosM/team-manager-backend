@@ -14,3 +14,6 @@ class Team(BaseTable, table=True):
     emblem_url: str | None = Field(nullable=True, default=None)
     foundation_date: date | None = Field(nullable=True, default=None)
     paid_until: date = Field(default_factory=_default_paid_until)
+    season_start_date: date | None = Field(nullable=True, default=None)
+    season_end_date: date | None = Field(nullable=True, default=None)
+    primary_color: str | None = Field(nullable=True, default=None)
