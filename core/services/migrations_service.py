@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
@@ -15,8 +15,8 @@ def run_migrations(password: str) -> dict:
         raise HTTPException(status_code=401, detail="Invalid password")
 
     try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        alembic_cfg = Config(os.path.join(base_dir, "..", "infra", "alembic.ini"))
+        base_dir = Path(__file__).resolve().parent.parent.parent
+        alembic_cfg = Config(base_dir / "infra" / "alembic.ini")
         command.upgrade(alembic_cfg, "head")
 
         return {"message": "Migrations applied successfully"}
@@ -25,8 +25,8 @@ def run_migrations(password: str) -> dict:
 
 
 def get_pending_migrations():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    alembic_cfg = Config(os.path.join(base_dir, "..", "infra", "alembic.ini"))
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    alembic_cfg = Config(base_dir / "infra" / "alembic.ini")
 
     script = ScriptDirectory.from_config(alembic_cfg)
 
