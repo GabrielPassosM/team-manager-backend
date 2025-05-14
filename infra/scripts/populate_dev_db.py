@@ -22,6 +22,8 @@ def _populate() -> None:
             name="Time Demo",
             emblem_url="https://i.postimg.cc/2jKvC0WY/emblema-demo.png",
             foundation_date=date(2023, 1, 1),
+            season_start_date=date(2023, 1, 1),
+            primary_color="#FF0000",
         ),
         User(
             team_id=team1_id,
@@ -38,6 +40,8 @@ def _populate() -> None:
             id=team2_id,
             name="Tribunata",
             foundation_date=date(1899, 11, 29),
+            season_start_date=date(2023, 1, 1),
+            primary_color="#FF0000",
         ),
         User(
             team_id=team2_id,

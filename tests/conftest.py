@@ -33,6 +33,8 @@ def mock_team():
         name="FC Barcelona",
         emblem_url="https://example.com/image.jpg",
         foundation_date=date(2023, 1, 1),
+        season_start_date=date(2023, 1, 1),
+        primary_color="#FF0000",
     )
     session = next(get_testing_session())
     session.add(mock)
@@ -43,11 +45,23 @@ def mock_team():
 
 @pytest.fixture(scope="function")
 def mock_team_gen(mock_team):
-    def _make_mock():
+    def _make_mock(
+        name: str = None,
+        emblem_url: str = None,
+        foundation_date: date = None,
+        paid_until: date = None,
+        season_start_date: date = None,
+        season_end_date: date = None,
+        primary_color: str = None,
+    ):
         mock = Team(
-            name="FC Barcelona",
-            emblem_url="https://example.com/image.jpg",
-            foundation_date=date(2023, 1, 1),
+            name=name or "FC Barcelona",
+            emblem_url=emblem_url or "https://example.com/image.jpg",
+            foundation_date=foundation_date or date(2023, 1, 1),
+            paid_until=paid_until,
+            season_start_date=season_start_date or date(2023, 1, 1),
+            season_end_date=season_end_date,
+            primary_color=primary_color or "#FF0000",
         )
         session = next(get_testing_session())
         session.add(mock)
