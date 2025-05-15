@@ -124,4 +124,5 @@ def _validate_user_token_testing() -> User:
         name="Test User",
         email=f"{uuid4()}@gmail.com",
         hashed_password=hash_password("1234"),
+        is_admin=True,
     )
