@@ -5,6 +5,8 @@ from uuid import UUID
 from bounded_contexts.team import service
 from bounded_contexts.team.models import Team
 from bounded_contexts.team.schemas import TeamCreate
+from bounded_contexts.user.models import User
+from core.services.auth import validate_user_token
 from infra.database import get_session
 
 router = APIRouter(prefix="/teams", tags=["Team"])
@@ -19,7 +21,11 @@ async def create_team(
 
 
 @router.get("/{team_id}", status_code=200)
-async def get_team(team_id: UUID, session: Session = Depends(get_session)) -> Team:
+async def get_team(
+    team_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> Team:
     return service.get_team_by_id(team_id, session)
 
 
