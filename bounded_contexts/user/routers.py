@@ -5,7 +5,12 @@ from uuid import UUID
 
 from bounded_contexts.user import service
 from bounded_contexts.user.models import User
-from bounded_contexts.user.schemas import UserCreate, LoginResponse, UserLoginResponse
+from bounded_contexts.user.schemas import (
+    UserCreate,
+    LoginResponse,
+    UserLoginResponse,
+    CurrentUserResponse,
+)
 from core.services.auth import create_access_token, validate_user_token
 from infra.database import get_session
 
@@ -41,8 +46,14 @@ def login(
 @router.get("/me", status_code=200)
 async def get_current_user(
     current_user: User = Depends(validate_user_token),
-) -> User:
-    return current_user
+) -> CurrentUserResponse:
+    return CurrentUserResponse(
+        id=current_user.id,
+        name=current_user.name,
+        email=current_user.email,
+        team_id=current_user.team_id,
+        is_admin=current_user.is_admin,
+    )
 
 
 @router.post("/", status_code=201)
