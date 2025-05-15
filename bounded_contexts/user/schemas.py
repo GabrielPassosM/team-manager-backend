@@ -32,3 +32,7 @@ class UserLoginResponse(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     user: UserLoginResponse
+
+
+class CurrentUserResponse(UserLoginResponse):
+    pass
