@@ -1,11 +1,13 @@
+from dataclasses import dataclass
 from datetime import date
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 import pytest
 
 from api.main import app
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
+from core.services.auth import validate_user_token
 from core.services.password import hash_password
 from infra.database import get_session
 from tests.database import get_testing_session, init_test_db, remove_test_db
@@ -15,6 +17,7 @@ from tests.database import get_testing_session, init_test_db, remove_test_db
 @pytest.fixture(autouse=True)
 def override_dependency():
     app.dependency_overrides[get_session] = get_testing_session
+    app.dependency_overrides[validate_user_token] = _validate_user_token_testing
     yield
     app.dependency_overrides.clear()
 
@@ -24,6 +27,19 @@ def setup_database():
     init_test_db()
     yield
     remove_test_db()
+
+
+@dataclass
+class _FakeUserForTokenValidation:
+    id: UUID = uuid4()
+    team_id: UUID = uuid4()
+    name: str = "Test User"
+    email: str = f"{uuid4()}@gmail.com"
+    hashed_password: str = hash_password("1234")
+    is_admin: bool = True
+
+
+_fake_user = _FakeUserForTokenValidation()
 
 
 # ------- TEST FIXTURES --------
@@ -40,6 +56,9 @@ def mock_team():
     session.add(mock)
     session.commit()
     session.refresh(mock)
+
+    _fake_user.team_id = mock.id
+
     yield mock
 
 
@@ -80,11 +99,18 @@ def mock_user(mock_team):
         name="Test User",
         email=f"{id_email}@gmail.com",
         hashed_password=hash_password("1234"),
+        is_admin=True,
     )
     session = next(get_testing_session())
     session.add(mock)
     session.commit()
     session.refresh(mock)
+
+    _fake_user.id = mock.id
+    _fake_user.email = mock.email
+    _fake_user.hashed_password = mock.hashed_password
+    _fake_user.is_admin = mock.is_admin
+    _fake_user.team_id = mock.team_id
 
     yield mock
 
@@ -97,12 +123,14 @@ def mock_user_gen(mock_team):
         email=None,
         password="1234",
         team_id=None,
+        is_admin=True,
     ):
         mock = User(
             team_id=team_id or mock_team.id,
             name=name or "Test User",
             email=email or f"{uuid4()}@gmail.com",
             hashed_password=hash_password(password),
+            is_admin=is_admin,
         )
         session = next(get_testing_session())
         session.add(mock)
@@ -111,3 +139,14 @@ def mock_user_gen(mock_team):
         return mock
 
     yield _make_mock
+
+
+def _validate_user_token_testing() -> User:
+    return User(
+        id=_fake_user.id,
+        team_id=_fake_user.team_id,
+        name=_fake_user.name,
+        email=_fake_user.email,
+        hashed_password=_fake_user.hashed_password,
+        is_admin=_fake_user.is_admin,
+    )

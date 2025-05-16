@@ -3,6 +3,8 @@ from datetime import date
 
 from pydantic import BaseModel, model_validator, field_validator
 
+from core.consts import DEFAULT_PRIMARY_COLOR
+
 
 class TeamCreate(BaseModel):
     name: str
@@ -11,7 +13,7 @@ class TeamCreate(BaseModel):
     paid_until: date | None = None
     season_start_date: date | None = None
     season_end_date: date | None = None
-    primary_color: str | None = None
+    primary_color: str | None = DEFAULT_PRIMARY_COLOR
 
     @model_validator(mode="after")
     def check_season_dates(self):
@@ -28,3 +30,12 @@ class TeamCreate(BaseModel):
         if not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", v):
             raise ValueError("primary_color must be a valid hex color code")
         return v
+
+
+class CurrentTeamResponse(BaseModel):
+    name: str
+    emblem_url: str | None
+    foundation_date: date | None
+    season_start_date: date | None
+    season_end_date: date | None
+    primary_color: str | None
