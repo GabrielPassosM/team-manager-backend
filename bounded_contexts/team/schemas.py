@@ -3,6 +3,8 @@ from datetime import date
 
 from pydantic import BaseModel, model_validator, field_validator
 
+from core.consts import DEFAULT_PRIMARY_COLOR
+
 
 class TeamCreate(BaseModel):
     name: str
@@ -11,7 +13,7 @@ class TeamCreate(BaseModel):
     paid_until: date | None = None
     season_start_date: date | None = None
     season_end_date: date | None = None
-    primary_color: str | None = None
+    primary_color: str | None = DEFAULT_PRIMARY_COLOR
 
     @model_validator(mode="after")
     def check_season_dates(self):
