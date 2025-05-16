@@ -67,7 +67,7 @@ def test_get_user_by_id(mock_user):
     assert response.json()["name"]
     assert response.json()["email"]
     assert response.json()["hashed_password"]
-    assert response.json()["is_admin"] == False
+    assert response.json()["is_admin"] == True
 
 
 def test_get_users_by_team_id(mock_user_gen, mock_team):

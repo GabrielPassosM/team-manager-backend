@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from datetime import date
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 import pytest
 
@@ -28,6 +29,19 @@ def setup_database():
     remove_test_db()
 
 
+@dataclass
+class _FakeUserForTokenValidation:
+    id: UUID = uuid4()
+    team_id: UUID = uuid4()
+    name: str = "Test User"
+    email: str = f"{uuid4()}@gmail.com"
+    hashed_password: str = hash_password("1234")
+    is_admin: bool = True
+
+
+_fake_user = _FakeUserForTokenValidation()
+
+
 # ------- TEST FIXTURES --------
 @pytest.fixture(scope="function")
 def mock_team():
@@ -42,6 +56,9 @@ def mock_team():
     session.add(mock)
     session.commit()
     session.refresh(mock)
+
+    _fake_user.team_id = mock.id
+
     yield mock
 
 
@@ -82,11 +99,18 @@ def mock_user(mock_team):
         name="Test User",
         email=f"{id_email}@gmail.com",
         hashed_password=hash_password("1234"),
+        is_admin=True,
     )
     session = next(get_testing_session())
     session.add(mock)
     session.commit()
     session.refresh(mock)
+
+    _fake_user.id = mock.id
+    _fake_user.email = mock.email
+    _fake_user.hashed_password = mock.hashed_password
+    _fake_user.is_admin = mock.is_admin
+    _fake_user.team_id = mock.team_id
 
     yield mock
 
@@ -99,7 +123,7 @@ def mock_user_gen(mock_team):
         email=None,
         password="1234",
         team_id=None,
-        is_admin=False,
+        is_admin=True,
     ):
         mock = User(
             team_id=team_id or mock_team.id,
@@ -119,10 +143,10 @@ def mock_user_gen(mock_team):
 
 def _validate_user_token_testing() -> User:
     return User(
-        id=uuid4(),
-        team_id=uuid4(),
-        name="Test User",
-        email=f"{uuid4()}@gmail.com",
-        hashed_password=hash_password("1234"),
-        is_admin=True,
+        id=_fake_user.id,
+        team_id=_fake_user.team_id,
+        name=_fake_user.name,
+        email=_fake_user.email,
+        hashed_password=_fake_user.hashed_password,
+        is_admin=_fake_user.is_admin,
     )

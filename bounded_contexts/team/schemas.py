@@ -28,3 +28,12 @@ class TeamCreate(BaseModel):
         if not re.match(r"^#(?:[0-9a-fA-F]{3}){1,2}$", v):
             raise ValueError("primary_color must be a valid hex color code")
         return v
+
+
+class CurrentTeamResponse(BaseModel):
+    name: str
+    emblem_url: str | None
+    foundation_date: date | None
+    season_start_date: date | None
+    season_end_date: date | None
+    primary_color: str | None

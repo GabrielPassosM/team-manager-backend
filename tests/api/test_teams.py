@@ -32,8 +32,8 @@ def test_create_team():
     assert response_body["deleted"] == False
 
 
-def test_get_team_by_id(mock_team):
-    response = client.get(f"/teams/{str(mock_team.id)}")
+def test_current_team(mock_team):
+    response = client.get(f"/teams/me")
     assert response.status_code == 200
     assert response.json()["name"] == "FC Barcelona"
 
@@ -42,6 +42,6 @@ def test_delete_team(mock_team):
     response = client.delete(f"/teams/{str(mock_team.id)}")
     assert response.status_code == 204
 
-    response = client.get(f"/teams/{str(mock_team.id)}")
+    response = client.get(f"/teams/me")
     assert response.status_code == 404
     assert response.json()["detail"] == "Time não encontrado no sistema"
