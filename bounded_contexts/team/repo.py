@@ -1,9 +1,12 @@
 from bounded_contexts.team.models import Team
-from bounded_contexts.team.schemas import TeamCreate
+from bounded_contexts.team.schemas import TeamCreate, TeamUpdate
+from bounded_contexts.user.models import User
 from core.repo import BaseRepo
 
 from uuid import UUID
 from sqlmodel import select
+
+from libs.datetime import utcnow
 
 
 class TeamWriteRepo(BaseRepo):
@@ -18,6 +21,21 @@ class TeamWriteRepo(BaseRepo):
         team.deleted = True
         self.session.merge(team)
         self.session.commit()
+
+    def update(
+        self, team: Team, team_data: TeamUpdate, current_user: User | UUID
+    ) -> Team:
+        for key, value in team_data.model_dump().items():
+            setattr(team, key, value)
+        team.updated_at = utcnow()
+        team.updated_by = (
+            current_user.id if isinstance(current_user, User) else current_user
+        )
+
+        self.session.merge(team)
+        self.session.commit()
+        self.session.refresh(team)
+        return team
 
 
 class TeamReadRepo(BaseRepo):
