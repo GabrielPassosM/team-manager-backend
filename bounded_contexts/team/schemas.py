@@ -6,11 +6,10 @@ from pydantic import BaseModel, model_validator, field_validator
 from core.consts import DEFAULT_PRIMARY_COLOR
 
 
-class TeamCreate(BaseModel):
+class _TeamBase(BaseModel):
     name: str
     emblem_url: str | None = None
     foundation_date: date | None = None
-    paid_until: date | None = None
     season_start_date: date | None = None
     season_end_date: date | None = None
     primary_color: str | None = DEFAULT_PRIMARY_COLOR
@@ -32,10 +31,13 @@ class TeamCreate(BaseModel):
         return v
 
 
-class CurrentTeamResponse(BaseModel):
-    name: str
-    emblem_url: str | None
-    foundation_date: date | None
-    season_start_date: date | None
-    season_end_date: date | None
-    primary_color: str | None
+class TeamCreate(_TeamBase):
+    paid_until: date | None = None
+
+
+class TeamUpdate(_TeamBase):
+    pass
+
+
+class CurrentTeamResponse(_TeamBase):
+    pass
