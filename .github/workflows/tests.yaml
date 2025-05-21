@@ -14,6 +14,7 @@ jobs:
       SALT_ROUNDS: 4
       PASSWORD_PEPPER: "any-pepper"
       JWT_KEY: "any-jwt"
+      ENV_CONFIG: "test"
 
     steps:
       - uses: actions/checkout@v4
