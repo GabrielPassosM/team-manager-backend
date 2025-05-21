@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.admin import router as admin_router
 from bounded_contexts.team.routers import router as team_router
 from bounded_contexts.user.routers import router as user_router
+from bounded_contexts.storage.routers import router as storage_router
 from core import settings
 
 security = HTTPBasic()
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(admin_router)
 app.include_router(team_router)
 app.include_router(user_router)
+app.include_router(storage_router)
 
 
 @app.get("/", status_code=200)
