@@ -39,6 +39,7 @@ async def get_current_team(
         season_start_date=team.season_start_date,
         season_end_date=team.season_end_date,
         primary_color=team.primary_color,
+        paid_until=team.paid_until,
     )
 
 
@@ -60,6 +61,7 @@ async def update_current_team(
         season_start_date=team.season_start_date,
         season_end_date=team.season_end_date,
         primary_color=team.primary_color,
+        paid_until=team.paid_until,
     )
 
 
