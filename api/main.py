@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.admin import router as admin_router
+from api.htmls.index_html import INDEX_HTML
 from bounded_contexts.team.routers import router as team_router
 from bounded_contexts.user.routers import router as user_router
 from bounded_contexts.storage.routers import router as storage_router
@@ -38,9 +39,9 @@ app.include_router(user_router)
 app.include_router(storage_router)
 
 
-@app.get("/", status_code=200)
+@app.get("/", response_class=HTMLResponse)
 async def index():
-    return {"Hello": "World"}
+    return HTMLResponse(content=INDEX_HTML, status_code=200)
 
 
 def _verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
