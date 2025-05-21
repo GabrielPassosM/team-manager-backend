@@ -40,4 +40,4 @@ class TeamUpdate(_TeamBase):
 
 
 class CurrentTeamResponse(_TeamBase):
-    pass
+    paid_until: date

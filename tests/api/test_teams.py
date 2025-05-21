@@ -33,10 +33,16 @@ def test_create_team():
     assert response_body["deleted"] == False
 
 
-def test_current_team(mock_team):
+def test_get_current_team(mock_team):
     response = client.get(f"/teams/me")
     assert response.status_code == 200
     assert response.json()["name"] == "FC Barcelona"
+    assert response.json()["emblem_url"] == "https://example.com/image.jpg"
+    assert response.json()["foundation_date"] == "2023-01-01"
+    assert response.json()["season_start_date"] == "2023-01-01"
+    assert response.json()["season_end_date"] is None
+    assert response.json()["primary_color"] == "#FF0000"
+    assert response.json()["paid_until"] is not None
 
 
 def test_update_current_team(mock_team):
@@ -58,6 +64,7 @@ def test_update_current_team(mock_team):
     assert response_body["season_start_date"] == "2023-01-02"
     assert response_body["season_end_date"] == "2024-12-31"
     assert response_body["primary_color"] == "#00FF00"
+    assert response_body["paid_until"] is not None
 
     team_updated = TeamReadRepo(session=next(get_testing_session())).get_by_id(
         mock_team.id
