@@ -4,12 +4,13 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.admin import router as admin_router
 from api.htmls.index_html import INDEX_HTML
+from core import settings
+from api.admin import router as admin_router
+from api.healthcheck import router as healthcheck_router
 from bounded_contexts.team.routers import router as team_router
 from bounded_contexts.user.routers import router as user_router
 from bounded_contexts.storage.routers import router as storage_router
-from core import settings
 
 security = HTTPBasic()
 
@@ -37,6 +38,7 @@ app.include_router(admin_router)
 app.include_router(team_router)
 app.include_router(user_router)
 app.include_router(storage_router)
+app.include_router(healthcheck_router)
 
 
 @app.get("/", response_class=HTMLResponse)
