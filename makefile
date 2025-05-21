@@ -31,4 +31,3 @@ run-tests:
 
 reset-docker:
 	docker rm -v -f postgres-dev
-	docker compose -f infra/compose.yaml up

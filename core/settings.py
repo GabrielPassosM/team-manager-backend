@@ -8,6 +8,8 @@ load_dotenv()
 # Infra
 DATABASE_URL = os.getenv("DATABASE_URL")
 ENV_CONFIG = os.getenv("ENV_CONFIG")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+TEAMS_BUCKET = os.getenv("TEAMS_BUCKET")
 
 # Security
 MIGRATIONS_PWD = os.getenv("MIGRATIONS_PWD")
@@ -18,3 +20,4 @@ SALT_ROUNDS = int(os.getenv("SALT_ROUNDS"))
 JWT_KEY = os.getenv("JWT_KEY")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
