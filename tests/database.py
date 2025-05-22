@@ -23,5 +23,8 @@ def remove_test_db():
 
 
 def get_testing_session():
-    with TestingSessionLocal() as session:
+    session = TestingSessionLocal()
+    try:
         yield session
+    finally:
+        session.close()
