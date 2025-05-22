@@ -39,6 +39,7 @@ def login(
             email=user.email,
             team_id=user.team_id,
             is_admin=user.is_admin,
+            is_super_admin=user.is_super_admin,
         ),
     )
 
@@ -53,6 +54,7 @@ async def get_current_user(
         email=current_user.email,
         team_id=current_user.team_id,
         is_admin=current_user.is_admin,
+        is_super_admin=current_user.is_super_admin,
     )
 
 

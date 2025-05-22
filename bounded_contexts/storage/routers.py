@@ -14,7 +14,7 @@ async def upload_emblem_image(
     file: UploadFile = File(...),
     current_user: User = Depends(validate_user_token),
 ) -> str:
-    if not current_user.is_admin:
+    if not current_user.has_admin_privileges:
         raise AdminRequired()
 
     try:

@@ -19,7 +19,7 @@ def _populate() -> None:
     team1_mocks = [
         Team(
             id=team1_id,
-            name="Time Demo",
+            name="Demo FC",
             emblem_url="https://i.postimg.cc/2jKvC0WY/emblema-demo.png",
             foundation_date=date(2023, 1, 1),
             season_start_date=date(2023, 1, 1),
@@ -30,6 +30,19 @@ def _populate() -> None:
             email="usuariodemo@gamalabs.com",
             hashed_password=hash_password("gamalabs#demo"),
             is_admin=True,
+        ),
+        User(
+            team_id=team1_id,
+            name="José da Silva",
+            email="josedasilva@demofc.com",
+            hashed_password=hash_password("1234"),
+        ),
+        User(
+            team_id=team1_id,
+            name="Super User",
+            email="superuser@demofc.com",
+            hashed_password=hash_password("1234"),
+            is_super_admin=True,
         ),
     ]
 
@@ -47,6 +60,19 @@ def _populate() -> None:
             email="gab@tribunata.com",
             hashed_password=hash_password("1234"),
             is_admin=True,
+        ),
+        User(
+            team_id=team2_id,
+            name="José da Silva",
+            email="josedasilva@tribunata.com",
+            hashed_password=hash_password("1234"),
+        ),
+        User(
+            team_id=team2_id,
+            name="Super User",
+            email="superuser@tribunata.com",
+            hashed_password=hash_password("1234"),
+            is_super_admin=True,
         ),
     ]
 

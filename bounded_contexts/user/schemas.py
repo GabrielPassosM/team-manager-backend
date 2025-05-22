@@ -27,6 +27,7 @@ class UserLoginResponse(BaseModel):
     email: str
     team_id: UUID
     is_admin: bool
+    is_super_admin: bool
 
 
 class LoginResponse(BaseModel):
