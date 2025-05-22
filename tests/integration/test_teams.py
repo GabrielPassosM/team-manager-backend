@@ -7,7 +7,9 @@ from tests.database import get_testing_session
 client = TestClient(app)
 
 
-def test_create_team():
+def test_create_team(mock_user_gen):
+    mock_user_gen(is_super_admin=True)
+
     data = {
         "name": "FC Barcelona",
         "emblem_url": "https://example.com/image.jpg",
@@ -75,7 +77,8 @@ def test_update_current_team(mock_team):
     assert team_updated.name == "São Paulo FC"
 
 
-def test_delete_team(mock_team):
+def test_delete_team(mock_team, mock_user_gen):
+    mock_user_gen(is_super_admin=True)
     response = client.delete(f"/teams/{str(mock_team.id)}")
     assert response.status_code == 204
 

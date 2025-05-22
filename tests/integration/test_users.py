@@ -106,6 +106,7 @@ def test_login_success(mock_user_gen):
         "email": user.email,
         "id": str(user.id),
         "is_admin": user.is_admin,
+        "is_super_admin": user.is_super_admin,
         "name": user.name,
         "team_id": str(user.team_id),
     }
@@ -120,3 +121,16 @@ def test_login_fail(mock_user_gen):
     response = client.post(f"/users/login", data=data)
     assert response.status_code == 401
     assert response.json()["detail"] == "Email ou senha incorretos"
+
+
+def test_get_current_user(mock_user):
+    response = client.get("/users/me")
+    assert response.status_code == 200
+
+    response_json = response.json()
+    assert response_json["id"] is not None
+    assert response_json["name"] is not None
+    assert response_json["email"] is not None
+    assert response_json["team_id"] is not None
+    assert response_json["is_admin"] is not None
+    assert response_json["is_super_admin"] is not None

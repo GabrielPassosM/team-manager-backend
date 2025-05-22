@@ -11,3 +11,8 @@ class User(BaseTable, table=True):
     email: str = Field(min_length=1, max_length=254, unique=True, index=True)
     hashed_password: str = Field(max_length=60)
     is_admin: bool = Field(default=False)
+    is_super_admin: bool = Field(default=False)
+
+    @property
+    def has_admin_privileges(self) -> bool:
+        return self.is_admin or self.is_super_admin

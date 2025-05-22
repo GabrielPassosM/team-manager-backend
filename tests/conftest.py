@@ -10,7 +10,12 @@ from bounded_contexts.user.models import User
 from core.services.auth import validate_user_token
 from core.services.password import hash_password
 from infra.database import get_session
-from tests.database import get_testing_session, init_test_db, remove_test_db
+from tests.database import (
+    get_testing_session,
+    init_test_db,
+    remove_test_db,
+    TestingSessionLocal,
+)
 
 
 # -------- DB SETUP --------
@@ -29,6 +34,15 @@ def setup_database():
     remove_test_db()
 
 
+@pytest.fixture(scope="function")
+def db_session():
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
 @dataclass
 class _FakeUserForTokenValidation:
     id: UUID = uuid4()
@@ -37,6 +51,7 @@ class _FakeUserForTokenValidation:
     email: str = f"{uuid4()}@gmail.com"
     hashed_password: str = hash_password("1234")
     is_admin: bool = True
+    is_super_admin: bool = False
 
 
 _fake_user = _FakeUserForTokenValidation()
@@ -44,7 +59,7 @@ _fake_user = _FakeUserForTokenValidation()
 
 # ------- TEST FIXTURES --------
 @pytest.fixture(scope="function")
-def mock_team():
+def mock_team(db_session):
     mock = Team(
         name="FC Barcelona",
         emblem_url="https://example.com/image.jpg",
@@ -52,10 +67,9 @@ def mock_team():
         season_start_date=date(2023, 1, 1),
         primary_color="#FF0000",
     )
-    session = next(get_testing_session())
-    session.add(mock)
-    session.commit()
-    session.refresh(mock)
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
 
     _fake_user.team_id = mock.id
 
@@ -63,7 +77,7 @@ def mock_team():
 
 
 @pytest.fixture(scope="function")
-def mock_team_gen(mock_team):
+def mock_team_gen(db_session, mock_team):
     def _make_mock(
         name: str = None,
         emblem_url: str = None,
@@ -82,17 +96,16 @@ def mock_team_gen(mock_team):
             season_end_date=season_end_date,
             primary_color=primary_color or "#FF0000",
         )
-        session = next(get_testing_session())
-        session.add(mock)
-        session.commit()
-        session.refresh(mock)
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
         return mock
 
     yield _make_mock
 
 
 @pytest.fixture(scope="function")
-def mock_user(mock_team):
+def mock_user(db_session, mock_team):
     id_email = uuid4()
     mock = User(
         team_id=mock_team.id,
@@ -101,22 +114,22 @@ def mock_user(mock_team):
         hashed_password=hash_password("1234"),
         is_admin=True,
     )
-    session = next(get_testing_session())
-    session.add(mock)
-    session.commit()
-    session.refresh(mock)
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
 
     _fake_user.id = mock.id
     _fake_user.email = mock.email
     _fake_user.hashed_password = mock.hashed_password
     _fake_user.is_admin = mock.is_admin
+    _fake_user.is_super_admin = mock.is_super_admin
     _fake_user.team_id = mock.team_id
 
     yield mock
 
 
 @pytest.fixture(scope="function")
-def mock_user_gen(mock_team):
+def mock_user_gen(db_session, mock_team):
 
     def _make_mock(
         name=None,
@@ -124,6 +137,7 @@ def mock_user_gen(mock_team):
         password="1234",
         team_id=None,
         is_admin=True,
+        is_super_admin=False,
     ):
         mock = User(
             team_id=team_id or mock_team.id,
@@ -131,11 +145,19 @@ def mock_user_gen(mock_team):
             email=email or f"{uuid4()}@gmail.com",
             hashed_password=hash_password(password),
             is_admin=is_admin,
+            is_super_admin=is_super_admin,
         )
-        session = next(get_testing_session())
-        session.add(mock)
-        session.commit()
-        session.refresh(mock)
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
+
+        _fake_user.id = mock.id
+        _fake_user.email = mock.email
+        _fake_user.hashed_password = mock.hashed_password
+        _fake_user.is_admin = mock.is_admin
+        _fake_user.is_super_admin = mock.is_super_admin
+        _fake_user.team_id = mock.team_id
+
         return mock
 
     yield _make_mock
@@ -149,4 +171,5 @@ def _validate_user_token_testing() -> User:
         email=_fake_user.email,
         hashed_password=_fake_user.hashed_password,
         is_admin=_fake_user.is_admin,
+        is_super_admin=_fake_user.is_super_admin,
     )

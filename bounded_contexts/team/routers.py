@@ -6,7 +6,7 @@ from bounded_contexts.team import service
 from bounded_contexts.team.models import Team
 from bounded_contexts.team.schemas import TeamCreate, CurrentTeamResponse, TeamUpdate
 from bounded_contexts.user.models import User
-from core.exceptions import AdminRequired
+from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.auth import validate_user_token
 from infra.database import get_session
 
@@ -19,8 +19,8 @@ async def create_team(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> Team:
-    if not current_user.is_admin:
-        raise AdminRequired()
+    if not current_user.is_super_admin:
+        raise SuperAdminRequired()
 
     return service.create_team(team_data, session)
 
@@ -49,7 +49,7 @@ async def update_current_team(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> CurrentTeamResponse:
-    if not current_user.is_admin:
+    if not current_user.has_admin_privileges:
         raise AdminRequired()
 
     team = service.update_team(current_user, team_data, session)
@@ -71,7 +71,7 @@ async def delete_team(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> None:
-    if not current_user.is_admin:
-        raise AdminRequired()
+    if not current_user.is_super_admin:
+        raise SuperAdminRequired()
 
     return service.delete_team(team_id, session)
