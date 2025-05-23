@@ -51,20 +51,19 @@ async def create_user(
     return service.create_user(user_data, session)
 
 
-@router.get("/{user_id}", status_code=200)
-async def get_user(user_id: UUID, session: Session = Depends(get_session)) -> User:
-    return service.get_user_by_id(user_id, session)
-
-
-@router.get("/team/{team_id}", status_code=200)
-async def get_users_by_team(
-    team_id: UUID,
+@router.get("/team-users", status_code=200)
+async def get_team_users(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> list[UserResponse]:
-    users = service.get_users_by_team(team_id, session)
+    users = service.get_users_by_team(current_user.team_id, session)
 
     return [UserResponse.model_validate(user) for user in users]
+
+
+@router.get("/{user_id}", status_code=200)
+async def get_user(user_id: UUID, session: Session = Depends(get_session)) -> User:
+    return service.get_user_by_id(user_id, session)
 
 
 @router.delete("/{user_id}", status_code=204)

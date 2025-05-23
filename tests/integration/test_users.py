@@ -70,12 +70,12 @@ def test_get_user_by_id(mock_user):
     User(**response_body)
 
 
-def test_get_users_by_team_id(mock_user_gen, mock_team):
+def test_get_team_users(mock_user_gen, mock_team):
     user1 = mock_user_gen()
     user2 = mock_user_gen()
     assert user1.team_id == user2.team_id == mock_team.id
 
-    response = client.get(f"/users/team/{str(user1.team_id)}")
+    response = client.get(f"/users/team-users")
     assert response.status_code == 200
 
     response_body = response.json()
