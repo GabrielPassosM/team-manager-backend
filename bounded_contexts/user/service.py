@@ -42,8 +42,12 @@ def get_user_by_id(user_id: UUID, session: Session) -> User:
     return user
 
 
-def get_users_by_team(team_id: UUID, session: Session) -> list[User]:
-    users = UserReadRepo(session=session).get_by_team_id_excluding_super_admin(team_id)
+def get_users_by_team(current_user: User, session: Session) -> list[User]:
+    users = UserReadRepo(
+        session=session
+    ).get_by_team_excluding_super_admin_and_current_user(
+        current_user.team_id, current_user.id
+    )
     return users
 
 

@@ -61,7 +61,8 @@ async def get_team_users(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> list[UserResponse]:
-    users = service.get_users_by_team(current_user.team_id, session)
+    users = service.get_users_by_team(current_user, session)
+    users.insert(0, current_user)
 
     return [UserResponse.model_validate(user) for user in users]
 

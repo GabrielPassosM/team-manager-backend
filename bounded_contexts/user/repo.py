@@ -37,12 +37,15 @@ class UserReadRepo(BaseRepo):
             )
         ).first()
 
-    def get_by_team_id_excluding_super_admin(self, team_id: UUID) -> list[User]:
+    def get_by_team_excluding_super_admin_and_current_user(
+        self, team_id: UUID, current_user_id: UUID
+    ) -> list[User]:
         return self.session.exec(
             select(User).where(
                 User.team_id == team_id,
-                User.deleted == False,
+                User.id != current_user_id,
                 User.is_super_admin == False,
+                User.deleted == False,
             )
         ).all()
 

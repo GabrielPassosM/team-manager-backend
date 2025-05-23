@@ -78,6 +78,9 @@ def test_get_team_users(mock_user_gen, mock_team):
     assert len(response_body) == 2
     [UserResponse.model_validate(user) for user in response_body]
 
+    # First user should be the current user
+    assert response_body[0]["id"] == str(user2.id)
+
 
 def test_delete_user(mock_user):
     response = client.delete(f"/users/{str(mock_user.id)}")
