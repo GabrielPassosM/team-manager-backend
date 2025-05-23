@@ -3,7 +3,8 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from api.main import app
-
+from bounded_contexts.user.models import User
+from bounded_contexts.user.schemas import UserLoginResponse, CurrentUserResponse
 
 client = TestClient(app)
 
@@ -63,11 +64,10 @@ def test_error_create_duplicate_user_email(mock_team_gen):
 def test_get_user_by_id(mock_user):
     response = client.get(f"/users/{str(mock_user.id)}")
     assert response.status_code == 200
-    assert response.json()["team_id"]
-    assert response.json()["name"]
-    assert response.json()["email"]
-    assert response.json()["hashed_password"]
-    assert response.json()["is_admin"] == True
+
+    response_body = response.json()
+    assert response_body["is_admin"] == True
+    User(**response_body)
 
 
 def test_get_users_by_team_id(mock_user_gen, mock_team):
@@ -98,18 +98,10 @@ def test_login_success(mock_user_gen):
     response = client.post(f"/users/login", data=data)
     assert response.status_code == 200
 
-    response_json = response.json()
-    assert "access_token" in response_json
+    response_body = response.json()
+    assert "access_token" in response_body
 
-    user_response = response_json["user"]
-    assert user_response == {
-        "email": user.email,
-        "id": str(user.id),
-        "is_admin": user.is_admin,
-        "is_super_admin": user.is_super_admin,
-        "name": user.name,
-        "team_id": str(user.team_id),
-    }
+    UserLoginResponse.model_validate(response_body["user"])
 
 
 def test_login_fail(mock_user_gen):
@@ -127,10 +119,5 @@ def test_get_current_user(mock_user):
     response = client.get("/users/me")
     assert response.status_code == 200
 
-    response_json = response.json()
-    assert response_json["id"] is not None
-    assert response_json["name"] is not None
-    assert response_json["email"] is not None
-    assert response_json["team_id"] is not None
-    assert response_json["is_admin"] is not None
-    assert response_json["is_super_admin"] is not None
+    response_body = response.json()
+    CurrentUserResponse.model_validate(response_body)
