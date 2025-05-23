@@ -42,5 +42,4 @@ class TeamUpdate(_TeamBase):
 
 
 class CurrentTeamResponse(BaseSchema, _TeamBase):
-    id: UUID
     paid_until: date
