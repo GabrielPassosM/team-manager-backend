@@ -1,9 +1,11 @@
 import re
 from datetime import date
+from uuid import UUID
 
 from pydantic import BaseModel, model_validator, field_validator
 
 from core.consts import DEFAULT_PRIMARY_COLOR
+from core.schemas import BaseSchema
 
 
 class _TeamBase(BaseModel):
@@ -39,5 +41,6 @@ class TeamUpdate(_TeamBase):
     pass
 
 
-class CurrentTeamResponse(_TeamBase):
+class CurrentTeamResponse(BaseSchema, _TeamBase):
+    id: UUID
     paid_until: date

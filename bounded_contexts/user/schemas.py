@@ -3,6 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel, field_validator
 
 from bounded_contexts.user.exceptions import PasswordToLong
+from core.schemas import BaseSchema
 
 
 class UserCreate(BaseModel):
@@ -21,7 +22,7 @@ class UserCreate(BaseModel):
         return value
 
 
-class UserLoginResponse(BaseModel):
+class UserResponse(BaseSchema):
     id: UUID
     name: str
     email: str
@@ -32,8 +33,4 @@ class UserLoginResponse(BaseModel):
 
 class LoginResponse(BaseModel):
     access_token: str
-    user: UserLoginResponse
-
-
-class CurrentUserResponse(UserLoginResponse):
-    pass
+    user: UserResponse

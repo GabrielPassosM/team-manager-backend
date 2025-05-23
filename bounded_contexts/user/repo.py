@@ -36,11 +36,12 @@ class UserReadRepo(BaseRepo):
             )
         ).first()
 
-    def get_all_by_team_id(self, team_id: UUID) -> list[User]:
+    def get_by_team_id_excluding_super_admin(self, team_id: UUID) -> list[User]:
         return self.session.exec(
             select(User).where(
                 User.team_id == team_id,
                 User.deleted == False,
+                User.is_super_admin == False,
             )
         ).all()
 
