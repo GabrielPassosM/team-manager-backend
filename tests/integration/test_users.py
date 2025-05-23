@@ -11,7 +11,6 @@ client = TestClient(app)
 
 def test_create_user(mock_team):
     data = {
-        "team_id": str(mock_team.id),
         "name": "Lionel Messi",
         "email": f"{uuid4()}@fcb.com",
         "password": "world-champion",
@@ -24,7 +23,6 @@ def test_create_user(mock_team):
 
 def test_error_create_user_with_long_password(mock_team):
     data = {
-        "team_id": str(mock_team.id),
         "name": "Dummy",
         "email": f"{uuid4()}@fcb.com",
         "password": "1234" * 19,  # 76 characters
@@ -39,7 +37,6 @@ def test_error_create_duplicate_user_email(mock_team_gen):
     team2 = mock_team_gen()
 
     data = {
-        "team_id": str(team1.id),
         "name": "Lionel Messi",
         "email": "messi@fcb.com",
         "password": "world-champion",
@@ -48,7 +45,6 @@ def test_error_create_duplicate_user_email(mock_team_gen):
     assert response.status_code == 201
 
     data = {
-        "team_id": str(team2.id),
         "name": "Neymar Jr.",
         "email": "messi@fcb.com",
         "password": "neymar",

@@ -7,7 +7,6 @@ from core.schemas import BaseSchema
 
 
 class UserCreate(BaseModel):
-    team_id: UUID
     name: str
     email: str
     password: str

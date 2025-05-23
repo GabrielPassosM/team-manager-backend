@@ -7,8 +7,9 @@ from sqlmodel import select
 
 
 class UserWriteRepo(BaseRepo):
-    def save(self, user_data: UserCreate, hashed_password: str) -> User:
+    def save(self, user_data: UserCreate, team_id: UUID, hashed_password: str) -> User:
         user_data = user_data.model_dump()
+        user_data["team_id"] = team_id
         user_data["hashed_password"] = hashed_password
         user_data.pop("password")
 
