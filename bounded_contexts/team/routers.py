@@ -32,15 +32,7 @@ async def get_current_team(
 ) -> CurrentTeamResponse:
     team = service.get_team_by_id(current_user.team_id, session)
 
-    return CurrentTeamResponse(
-        name=team.name,
-        emblem_url=team.emblem_url,
-        foundation_date=team.foundation_date,
-        season_start_date=team.season_start_date,
-        season_end_date=team.season_end_date,
-        primary_color=team.primary_color,
-        paid_until=team.paid_until,
-    )
+    return CurrentTeamResponse.model_validate(team)
 
 
 @router.patch("/me", status_code=200)
@@ -54,15 +46,7 @@ async def update_current_team(
 
     team = service.update_team(current_user, team_data, session)
 
-    return CurrentTeamResponse(
-        name=team.name,
-        emblem_url=team.emblem_url,
-        foundation_date=team.foundation_date,
-        season_start_date=team.season_start_date,
-        season_end_date=team.season_end_date,
-        primary_color=team.primary_color,
-        paid_until=team.paid_until,
-    )
+    return CurrentTeamResponse.model_validate(team)
 
 
 @router.delete("/{team_id}", status_code=204)

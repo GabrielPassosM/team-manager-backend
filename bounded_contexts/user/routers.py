@@ -33,14 +33,7 @@ def login(
 
     return LoginResponse(
         access_token=access_token,
-        user=UserLoginResponse(
-            id=user.id,
-            name=user.name,
-            email=user.email,
-            team_id=user.team_id,
-            is_admin=user.is_admin,
-            is_super_admin=user.is_super_admin,
-        ),
+        user=UserLoginResponse.model_validate(user),
     )
 
 
@@ -48,14 +41,7 @@ def login(
 async def get_current_user(
     current_user: User = Depends(validate_user_token),
 ) -> CurrentUserResponse:
-    return CurrentUserResponse(
-        id=current_user.id,
-        name=current_user.name,
-        email=current_user.email,
-        team_id=current_user.team_id,
-        is_admin=current_user.is_admin,
-        is_super_admin=current_user.is_super_admin,
-    )
+    return CurrentUserResponse.model_validate(current_user)
 
 
 @router.post("/", status_code=201)
