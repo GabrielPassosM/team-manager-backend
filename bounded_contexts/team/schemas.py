@@ -1,5 +1,6 @@
 import re
 from datetime import date
+from uuid import UUID
 
 from pydantic import BaseModel, model_validator, field_validator
 
@@ -41,4 +42,5 @@ class TeamUpdate(_TeamBase):
 
 
 class CurrentTeamResponse(BaseSchema, _TeamBase):
+    id: UUID
     paid_until: date

@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from bounded_contexts.user.models import User
-from bounded_contexts.user.schemas import UserLoginResponse, CurrentUserResponse
+from bounded_contexts.user.schemas import UserResponse, UserResponse
 
 client = TestClient(app)
 
@@ -77,7 +77,10 @@ def test_get_users_by_team_id(mock_user_gen, mock_team):
 
     response = client.get(f"/users/team/{str(user1.team_id)}")
     assert response.status_code == 200
-    assert len(response.json()) == 2
+
+    response_body = response.json()
+    assert len(response_body) == 2
+    [UserResponse.model_validate(user) for user in response_body]
 
 
 def test_delete_user(mock_user):
@@ -101,7 +104,7 @@ def test_login_success(mock_user_gen):
     response_body = response.json()
     assert "access_token" in response_body
 
-    UserLoginResponse.model_validate(response_body["user"])
+    UserResponse.model_validate(response_body["user"])
 
 
 def test_login_fail(mock_user_gen):
@@ -120,4 +123,4 @@ def test_get_current_user(mock_user):
     assert response.status_code == 200
 
     response_body = response.json()
-    CurrentUserResponse.model_validate(response_body)
+    UserResponse.model_validate(response_body)

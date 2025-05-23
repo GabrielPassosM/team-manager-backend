@@ -8,8 +8,7 @@ from bounded_contexts.user.models import User
 from bounded_contexts.user.schemas import (
     UserCreate,
     LoginResponse,
-    UserLoginResponse,
-    CurrentUserResponse,
+    UserResponse,
 )
 from core.services.auth import create_access_token, validate_user_token
 from infra.database import get_session
@@ -33,15 +32,15 @@ def login(
 
     return LoginResponse(
         access_token=access_token,
-        user=UserLoginResponse.model_validate(user),
+        user=UserResponse.model_validate(user),
     )
 
 
 @router.get("/me", status_code=200)
 async def get_current_user(
     current_user: User = Depends(validate_user_token),
-) -> CurrentUserResponse:
-    return CurrentUserResponse.model_validate(current_user)
+) -> UserResponse:
+    return UserResponse.model_validate(current_user)
 
 
 @router.post("/", status_code=201)
@@ -59,9 +58,13 @@ async def get_user(user_id: UUID, session: Session = Depends(get_session)) -> Us
 
 @router.get("/team/{team_id}", status_code=200)
 async def get_users_by_team(
-    team_id: UUID, session: Session = Depends(get_session)
-) -> list[User]:
-    return service.get_users_by_team(team_id, session)
+    team_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[UserResponse]:
+    users = service.get_users_by_team(team_id, session)
+
+    return [UserResponse.model_validate(user) for user in users]
 
 
 @router.delete("/{user_id}", status_code=204)

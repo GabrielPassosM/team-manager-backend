@@ -22,7 +22,7 @@ class UserCreate(BaseModel):
         return value
 
 
-class _UserBasicResponse(BaseSchema):
+class UserResponse(BaseSchema):
     id: UUID
     name: str
     email: str
@@ -31,14 +31,6 @@ class _UserBasicResponse(BaseSchema):
     is_super_admin: bool
 
 
-class UserLoginResponse(_UserBasicResponse):
-    pass
-
-
 class LoginResponse(BaseModel):
     access_token: str
-    user: UserLoginResponse
-
-
-class CurrentUserResponse(_UserBasicResponse):
-    pass
+    user: UserResponse
