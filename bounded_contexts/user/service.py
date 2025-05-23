@@ -22,8 +22,8 @@ def authenticate_user(email: str, password: str, session: Session) -> User:
     return user
 
 
-def create_user(user_data: UserCreate, session: Session) -> User:
-    if not TeamReadRepo(session=session).get_by_id(user_data.team_id):
+def create_user(user_data: UserCreate, team_id: UUID, session: Session) -> User:
+    if not TeamReadRepo(session=session).get_by_id(team_id):
         raise TeamNotFound()
 
     if UserReadRepo(session=session).get_by_email(user_data.email):
@@ -31,7 +31,7 @@ def create_user(user_data: UserCreate, session: Session) -> User:
 
     hashed_password = hash_password(user_data.password)
 
-    return UserWriteRepo(session=session).save(user_data, hashed_password)
+    return UserWriteRepo(session=session).save(user_data, team_id, hashed_password)
 
 
 def get_user_by_id(user_id: UUID, session: Session) -> User:

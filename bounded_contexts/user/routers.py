@@ -10,6 +10,7 @@ from bounded_contexts.user.schemas import (
     LoginResponse,
     UserResponse,
 )
+from core.exceptions import AdminRequired
 from core.services.auth import create_access_token, validate_user_token
 from infra.database import get_session
 
@@ -47,8 +48,12 @@ async def get_current_user(
 async def create_user(
     user_data: UserCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
 ) -> User:
-    return service.create_user(user_data, session)
+    if not current_user.has_admin_privileges:
+        raise AdminRequired()
+
+    return service.create_user(user_data, current_user.team_id, session)
 
 
 @router.get("/team-users", status_code=200)
