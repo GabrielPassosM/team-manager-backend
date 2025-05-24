@@ -86,5 +86,9 @@ async def update_user(
 
 
 @router.delete("/{user_id}", status_code=204)
-async def delete_user(user_id: UUID, session: Session = Depends(get_session)) -> None:
-    return service.delete_user(user_id, session)
+async def delete_user(
+    user_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> None:
+    return service.delete_user(user_id, current_user, session)

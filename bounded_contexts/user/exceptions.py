@@ -18,7 +18,7 @@ class UserNotFound(HTTPException):
 @dataclass
 class EmailAlreadyInUse(HTTPException):
     status_code = 400
-    detail = "Já existe um usuário com este e-mail cadastrado neste time no sistema"
+    detail = "Já existe um usuário com este e-mail cadastrado no sistema"
 
 
 @dataclass
@@ -31,4 +31,16 @@ class LoginUnauthorized(HTTPException):
 @dataclass
 class CantUpdateAdminUser(HTTPException):
     status_code = 403
-    detail = "Não é permitido atualizar outro usuário admin"
+    detail = "Não é permitido atualizar outro usuário admin. Qualquer dúvida, entre em contato com o suporte técnico."
+
+
+@dataclass
+class CantDeleteAdminUser(HTTPException):
+    status_code = 403
+    detail = "Não é permitido remover outro usuário admin. Qualquer dúvida, entre em contato com o suporte técnico."
+
+
+@dataclass
+class CantDeleteYourself(HTTPException):
+    status_code = 403
+    detail = "Não é permitido remover seu próprio usuário. Qualquer dúvida, entre em contato com o suporte técnico."

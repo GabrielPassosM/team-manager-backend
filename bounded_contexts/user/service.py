@@ -8,6 +8,7 @@ from bounded_contexts.user.exceptions import (
     EmailAlreadyInUse,
     LoginUnauthorized,
     CantUpdateAdminUser,
+    CantDeleteYourself,
 )
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
@@ -100,6 +101,25 @@ def get_users_by_team(current_user: User, session: Session) -> list[User]:
     return users
 
 
-def delete_user(user_id: UUID, session: Session) -> None:
-    user = get_user_by_id(user_id, session)
-    UserWriteRepo(session=session).delete(user)
+def delete_user(user_id: UUID, current_user: User, session: Session) -> None:
+    user_to_delete = get_user_by_id(user_id, session)
+    if not user_to_delete:
+        raise UserNotFound()
+
+    _validate_delete_request(current_user, user_to_delete)
+
+    UserWriteRepo(session=session).delete(user_to_delete, current_user.id)
+
+
+def _validate_delete_request(current_user: User, user_to_delete: User) -> None:
+    if current_user.id == user_to_delete.id:
+        raise CantDeleteYourself()
+
+    if current_user.is_super_admin:
+        return
+
+    if not current_user.is_admin:
+        raise AdminRequired()
+
+    if user_to_delete.has_admin_privileges:
+        raise CantUpdateAdminUser()
