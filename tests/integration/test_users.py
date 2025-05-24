@@ -54,7 +54,7 @@ def test_error_create_duplicate_user_email(mock_team_gen):
     assert response.status_code == 400
     assert (
         response.json()["detail"]
-        == "Já existe um usuário com este e-mail cadastrado neste time no sistema"
+        == "Já existe um usuário com este e-mail cadastrado no sistema"
     )
 
 
@@ -115,15 +115,17 @@ def test_error_update_user_with_same_email(mock_user_gen):
     assert response.status_code == 400
     assert (
         response.json()["detail"]
-        == "Já existe um usuário com este e-mail cadastrado neste time no sistema"
+        == "Já existe um usuário com este e-mail cadastrado no sistema"
     )
 
 
-def test_delete_user(mock_user):
-    response = client.delete(f"/users/{str(mock_user.id)}")
+def test_delete_user(mock_user_gen):
+    user1 = mock_user_gen(is_admin=False)
+    user2 = mock_user_gen()
+    response = client.delete(f"/users/{str(user1.id)}")
     assert response.status_code == 204
 
-    response = client.get(f"/users/{str(mock_user.id)}")
+    response = client.get(f"/users/{str(user1.id)}")
     assert response.status_code == 404
     assert response.json()["detail"] == "Usuário não encontrado no sistema"
 

@@ -45,8 +45,12 @@ class UserWriteRepo(BaseRepo):
         self.session.refresh(user)
         return user
 
-    def delete(self, user: User) -> None:
+    def delete(self, user: User, current_user: User | UUID) -> None:
         user.deleted = True
+        user.updated_at = utcnow()
+        user.updated_by = (
+            current_user.id if isinstance(current_user, User) else current_user
+        )
         self.session.merge(user)
         self.session.commit()
 
