@@ -9,6 +9,7 @@ from bounded_contexts.user.schemas import (
     UserCreate,
     LoginResponse,
     UserResponse,
+    UserUpdate,
 )
 from core.exceptions import AdminRequired
 from core.services.auth import create_access_token, validate_user_token
@@ -70,6 +71,18 @@ async def get_team_users(
 @router.get("/{user_id}", status_code=200)
 async def get_user(user_id: UUID, session: Session = Depends(get_session)) -> User:
     return service.get_user_by_id(user_id, session)
+
+
+@router.patch("/{user_id}", status_code=200)
+async def update_user(
+    user_id: UUID,
+    user_data: UserUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> UserResponse:
+    user_updated = service.update_user(user_id, user_data, session, current_user)
+
+    return UserResponse.model_validate(user_updated)
 
 
 @router.delete("/{user_id}", status_code=204)

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from api.main import app
 from bounded_contexts.user.models import User
 from bounded_contexts.user.schemas import UserResponse, UserResponse
+from core.services.password import verify_password
 
 client = TestClient(app)
 
@@ -80,6 +81,42 @@ def test_get_team_users(mock_user_gen, mock_team):
 
     # First user should be the current user
     assert response_body[0]["id"] == str(user2.id)
+
+
+def test_update_user_success(mock_user):
+    user_before_update = mock_user
+
+    data = {
+        "name": "Lionel Messi",
+        "email": f"{uuid4()}@fcb.com",
+        "password": "world-champion",
+    }
+    response = client.patch(f"/users/{str(user_before_update.id)}", json=data)
+    assert response.status_code == 200
+    response_body = response.json()
+    UserResponse.model_validate(response_body)
+    assert response_body["name"] == data["name"]
+    assert response_body["email"] == data["email"]
+    assert response_body["is_admin"] == user_before_update.is_admin
+    assert response_body["is_super_admin"] == user_before_update.is_super_admin
+    assert not verify_password(data["password"], user_before_update.hashed_password)
+
+
+def test_error_update_user_with_same_email(mock_user_gen):
+    user1 = mock_user_gen()
+    user2 = mock_user_gen()
+
+    data = {
+        "name": "Lionel Messi",
+        "email": user1.email,
+        "password": "world-champion",
+    }
+    response = client.patch(f"/users/{str(user2.id)}", json=data)
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "Já existe um usuário com este e-mail cadastrado neste time no sistema"
+    )
 
 
 def test_delete_user(mock_user):

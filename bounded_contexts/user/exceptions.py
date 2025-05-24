@@ -26,3 +26,9 @@ class LoginUnauthorized(HTTPException):
     status_code = 401
     detail = "Email ou senha incorretos"
     headers = {"WWW-Authenticate": "Bearer"}
+
+
+@dataclass
+class CantUpdateAdminUser(HTTPException):
+    status_code = 403
+    detail = "Não é permitido atualizar outro usuário admin"

@@ -26,6 +26,8 @@ class TeamWriteRepo(BaseRepo):
         self, team: Team, team_data: TeamUpdate, current_user: User | UUID
     ) -> Team:
         for key, value in team_data.model_dump().items():
+            if key == "id":
+                continue
             setattr(team, key, value)
         team.updated_at = utcnow()
         team.updated_by = (
