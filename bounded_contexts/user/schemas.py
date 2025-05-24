@@ -21,6 +21,12 @@ class UserCreate(BaseModel):
         return value
 
 
+class UserUpdate(BaseModel):
+    name: str
+    email: str
+    password: str | None = None
+
+
 class UserResponse(BaseSchema):
     id: UUID
     name: str

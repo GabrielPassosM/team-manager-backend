@@ -1,9 +1,12 @@
 from bounded_contexts.user.models import User
-from bounded_contexts.user.schemas import UserCreate
+from bounded_contexts.user.schemas import UserCreate, UserUpdate
 from core.repo import BaseRepo
 
 from uuid import UUID
 from sqlmodel import select
+
+from core.services.password import hash_password
+from libs.datetime import utcnow
 
 
 class UserWriteRepo(BaseRepo):
@@ -15,6 +18,29 @@ class UserWriteRepo(BaseRepo):
 
         user = User(**user_data)
         self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+    def update(
+        self, user: User, user_data: UserUpdate, current_user: User | UUID
+    ) -> User:
+        user_data = user_data.model_dump()
+        password = user_data.pop("password")
+        if password:
+            user_data["hashed_password"] = hash_password(password)
+
+        for key, value in user_data.items():
+            if key == "id":
+                continue
+            setattr(user, key, value)
+
+        user.updated_at = utcnow()
+        user.updated_by = (
+            current_user.id if isinstance(current_user, User) else current_user
+        )
+
+        self.session.merge(user)
         self.session.commit()
         self.session.refresh(user)
         return user
@@ -37,12 +63,15 @@ class UserReadRepo(BaseRepo):
             )
         ).first()
 
-    def get_by_team_id_excluding_super_admin(self, team_id: UUID) -> list[User]:
+    def get_by_team_excluding_super_admin_and_current_user(
+        self, team_id: UUID, current_user_id: UUID
+    ) -> list[User]:
         return self.session.exec(
             select(User).where(
                 User.team_id == team_id,
-                User.deleted == False,
+                User.id != current_user_id,
                 User.is_super_admin == False,
+                User.deleted == False,
             )
         ).all()
 
