@@ -83,6 +83,83 @@ def test_get_team_users(mock_user_gen, mock_team):
     assert response_body[0]["id"] == str(user2.id)
 
 
+def test_get_users_by_name_and_permission_type(mock_user_gen):
+    user1 = mock_user_gen(name="Lionel Messi", is_admin=True)
+    user2 = mock_user_gen(name="Neymar Jr.", is_admin=False)
+
+    response1 = client.get(f"/users/name/onel?permission_type=")
+    assert response1.status_code == 200
+    response_body1 = response1.json()
+    assert len(response_body1) == 1
+    assert response_body1[0]["id"] == str(user1.id)
+
+    response2 = client.get(f"/users/name/onel?permission_type=admin")
+    assert response2.status_code == 200
+    response_body2 = response2.json()
+    assert len(response_body2) == 1
+    assert response_body2[0]["id"] == str(user1.id)
+
+    response3 = client.get(f"/users/name/onel?permission_type=user")
+    assert response3.status_code == 200
+    assert len(response3.json()) == 0
+
+    response4 = client.get(f"/users/name/jr.?permission_type=user")
+    assert response4.status_code == 200
+    response_body4 = response4.json()
+    assert len(response_body4) == 1
+    assert response_body4[0]["id"] == str(user2.id)
+
+    UserResponse.model_validate(response_body1[0])
+
+
+def test_get_users_by_email_and_permission_type(mock_user_gen):
+    user1 = mock_user_gen(email=f"messi@{uuid4()}.com", is_admin=True)
+    user2 = mock_user_gen(email=f"neymar@{uuid4()}.com", is_admin=False)
+
+    response1 = client.get(f"/users/email/messi?permission_type=")
+    assert response1.status_code == 200
+    response_body1 = response1.json()
+    assert len(response_body1) == 1
+    assert response_body1[0]["id"] == str(user1.id)
+
+    response2 = client.get(f"/users/email/messi?permission_type=admin")
+    assert response2.status_code == 200
+    response_body2 = response2.json()
+    assert len(response_body2) == 1
+    assert response_body2[0]["id"] == str(user1.id)
+
+    response3 = client.get(f"/users/email/messi?permission_type=user")
+    assert response3.status_code == 200
+    assert len(response3.json()) == 0
+
+    response4 = client.get(f"/users/email/neymar?permission_type=user")
+    assert response4.status_code == 200
+    response_body4 = response4.json()
+    assert len(response_body4) == 1
+    assert response_body4[0]["id"] == str(user2.id)
+
+    UserResponse.model_validate(response_body1[0])
+
+
+def test_get_users_by_permission_type(mock_user_gen):
+    user1 = mock_user_gen(is_admin=True)
+    user2 = mock_user_gen(is_admin=False)
+    user3 = mock_user_gen(is_admin=False)
+
+    response1 = client.get(f"/users/type/admin")
+    assert response1.status_code == 200
+    response_body1 = response1.json()
+    assert len(response_body1) == 1
+    assert response_body1[0]["id"] == str(user1.id)
+
+    response2 = client.get(f"/users/type/user")
+    assert response2.status_code == 200
+    response_body2 = response2.json()
+    assert len(response_body2) == 2
+
+    UserResponse.model_validate(response_body2[0])
+
+
 def test_update_user_success(mock_user):
     user_before_update = mock_user
 

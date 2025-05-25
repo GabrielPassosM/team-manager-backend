@@ -10,7 +10,7 @@ from bounded_contexts.user.exceptions import (
     CantUpdateAdminUser,
     CantDeleteYourself,
 )
-from bounded_contexts.user.models import User
+from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
 from bounded_contexts.user.schemas import UserCreate, UserUpdate
 from core.exceptions import AdminRequired
@@ -99,6 +99,40 @@ def get_users_by_team(current_user: User, session: Session) -> list[User]:
         current_user.team_id, current_user.id
     )
     return users
+
+
+def get_users_by_name_in_and_permission_type(
+    name_snippet: str, permission_type: UserPermissions, team_id: UUID, session: Session
+) -> list[User]:
+    if permission_type:
+        is_admin = permission_type.has_admin_privileges
+        return UserReadRepo(session=session).get_by_name_in_and_is_admin(
+            name_snippet, is_admin, team_id
+        )
+
+    return UserReadRepo(session=session).get_by_name_in(name_snippet, team_id)
+
+
+def get_users_by_email_in_and_permission_type(
+    email_snippet: str,
+    permission_type: UserPermissions | None,
+    team_id: UUID,
+    session: Session,
+) -> list[User]:
+    if permission_type:
+        is_admin = permission_type.has_admin_privileges
+        return UserReadRepo(session=session).get_by_email_in_and_is_admin(
+            email_snippet, is_admin, team_id
+        )
+
+    return UserReadRepo(session=session).get_by_email_in(email_snippet, team_id)
+
+
+def get_users_by_permission_type(
+    permission_type: UserPermissions, team_id: UUID, session: Session
+) -> list[User]:
+    is_admin = permission_type.has_admin_privileges
+    return UserReadRepo(session=session).get_by_is_admin(is_admin, team_id)
 
 
 def delete_user(user_id: UUID, current_user: User, session: Session) -> None:

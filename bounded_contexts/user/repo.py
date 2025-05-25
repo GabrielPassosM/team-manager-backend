@@ -61,7 +61,7 @@ class UserReadRepo(BaseRepo):
             user_id = UUID(user_id)
 
         return self.session.exec(
-            select(User).where(
+            select(User).where(  # type: ignore
                 User.id == user_id,
                 User.deleted == False,
             )
@@ -71,7 +71,7 @@ class UserReadRepo(BaseRepo):
         self, team_id: UUID, current_user_id: UUID
     ) -> list[User]:
         return self.session.exec(
-            select(User).where(
+            select(User).where(  # type: ignore
                 User.team_id == team_id,
                 User.id != current_user_id,
                 User.is_super_admin == False,
@@ -81,8 +81,64 @@ class UserReadRepo(BaseRepo):
 
     def get_by_email(self, email: str) -> User:
         return self.session.exec(
-            select(User).where(
+            select(User).where(  # type: ignore
                 User.email == email,
                 User.deleted == False,
             )
         ).first()
+
+    def get_by_name_in(self, name_snippet: str, team_id: UUID) -> list[User]:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.name.ilike(f"%{name_snippet}%"),
+                User.team_id == team_id,
+                User.is_super_admin == False,
+                User.deleted == False,
+            )
+        ).all()
+
+    def get_by_name_in_and_is_admin(
+        self, name_snippet: str, is_admin: bool, team_id: UUID
+    ) -> list[User]:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.name.ilike(f"%{name_snippet}%"),
+                User.team_id == team_id,
+                User.is_admin == is_admin,
+                User.is_super_admin == False,
+                User.deleted == False,
+            )
+        ).all()
+
+    def get_by_email_in(self, email_snippet: str, team_id: UUID) -> list[User]:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.email.ilike(f"%{email_snippet}%"),
+                User.team_id == team_id,
+                User.is_super_admin == False,
+                User.deleted == False,
+            )
+        ).all()
+
+    def get_by_email_in_and_is_admin(
+        self, email_snippet: str, is_admin: bool, team_id: UUID
+    ) -> list[User]:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.email.ilike(f"%{email_snippet}%"),
+                User.team_id == team_id,
+                User.is_admin == is_admin,
+                User.is_super_admin == False,
+                User.deleted == False,
+            )
+        ).all()
+
+    def get_by_is_admin(self, is_admin: bool, team_id: UUID) -> list[User]:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.team_id == team_id,
+                User.is_admin == is_admin,
+                User.is_super_admin == False,
+                User.deleted == False,
+            )
+        ).all()
