@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 from uuid import UUID
 
 from bounded_contexts.user import service
-from bounded_contexts.user.models import User
+from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.schemas import (
     UserCreate,
     LoginResponse,
@@ -64,6 +64,51 @@ async def get_team_users(
 ) -> list[UserResponse]:
     users = service.get_users_by_team(current_user, session)
     users.insert(0, current_user)
+
+    return [UserResponse.model_validate(user) for user in users]
+
+
+@router.get("/name/{name_snippet}", status_code=200)
+async def get_users_by_name_and_permission_type(
+    name_snippet: str,
+    permission_type: str | None = Query(default=None),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[UserResponse]:
+    if permission_type:
+        permission_type = UserPermissions(permission_type)
+    users = service.get_users_by_name_in_and_permission_type(
+        name_snippet, permission_type, current_user.team_id, session
+    )
+
+    return [UserResponse.model_validate(user) for user in users]
+
+
+@router.get("/email/{email_snippet}", status_code=200)
+async def get_users_by_email_and_permission_type(
+    email_snippet: str,
+    permission_type: str | None = Query(default=None),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[UserResponse]:
+    if permission_type:
+        permission_type = UserPermissions(permission_type)
+    users = service.get_users_by_email_in_and_permission_type(
+        email_snippet, permission_type, current_user.team_id, session
+    )
+
+    return [UserResponse.model_validate(user) for user in users]
+
+
+@router.get("/type/{permission_type}", status_code=200)
+async def get_users_by_permission_type(
+    permission_type: UserPermissions,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[UserResponse]:
+    users = service.get_users_by_permission_type(
+        permission_type, current_user.team_id, session
+    )
 
     return [UserResponse.model_validate(user) for user in users]
 

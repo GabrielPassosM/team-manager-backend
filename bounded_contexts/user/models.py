@@ -1,3 +1,4 @@
+from enum import Enum
 from uuid import UUID
 
 from sqlmodel import Field
@@ -16,3 +17,13 @@ class User(BaseTable, table=True):
     @property
     def has_admin_privileges(self) -> bool:
         return self.is_admin or self.is_super_admin
+
+
+class UserPermissions(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
+    SUPER_ADMIN = "super_admin"
+
+    @property
+    def has_admin_privileges(self) -> bool:
+        return self in (self.ADMIN, self.SUPER_ADMIN)
