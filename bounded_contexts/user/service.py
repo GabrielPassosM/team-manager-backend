@@ -142,7 +142,7 @@ def delete_user(user_id: UUID, current_user: User, session: Session) -> None:
 
     _validate_delete_request(current_user, user_to_delete)
 
-    UserWriteRepo(session=session).delete(user_to_delete, current_user.id)
+    UserWriteRepo(session=session).delete(user_to_delete)
 
 
 def _validate_delete_request(current_user: User, user_to_delete: User) -> None:
