@@ -1,13 +1,13 @@
 from datetime import date
 
 from bounded_contexts.championship.models import Championship
-from bounded_contexts.championship.schemas import ChampionshipCreate
+from bounded_contexts.championship.schemas import ChampionshipCreate, ChampionshipUpdate
 from core.repo import BaseRepo
 
 from uuid import UUID
 from sqlmodel import select, desc, and_, or_
 
-from libs.datetime import brasilia_now
+from libs.datetime import brasilia_now, utcnow
 
 
 class ChampionshipWriteRepo(BaseRepo):
@@ -20,6 +20,25 @@ class ChampionshipWriteRepo(BaseRepo):
         championship = Championship(**create_data)
         championship.created_by = current_user_id
         self.session.add(championship)
+        self.session.commit()
+        self.session.refresh(championship)
+        return championship
+
+    def update(
+        self,
+        championship: Championship,
+        update_data: ChampionshipUpdate,
+        current_user_id: UUID,
+    ):
+        for key, value in update_data.model_dump().items():
+            if key == "id":
+                continue
+            setattr(championship, key, value)
+
+        championship.updated_at = utcnow()
+        championship.updated_by = current_user_id
+
+        self.session.merge(championship)
         self.session.commit()
         self.session.refresh(championship)
         return championship
@@ -78,6 +97,17 @@ class ChampionshipReadRepo(BaseRepo):
             )
             .order_by(desc(Championship.start_date))
         )
+
+    def get_by_id(self, champ_id: UUID | str) -> Championship:
+        if isinstance(champ_id, str):
+            champ_id = UUID(champ_id)
+
+        return self.session.exec(
+            select(Championship).where(  # type: ignore
+                Championship.id == champ_id,
+                Championship.deleted == False,
+            )
+        ).first()
 
     def get_by_name(self, name: str, team_id: UUID) -> Championship | None:
         return self.session.exec(

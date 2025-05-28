@@ -6,6 +6,7 @@ import time_machine
 
 from api.main import app
 from bounded_contexts.championship.models import FinalStageOptions, ChampionshipStatus
+from bounded_contexts.championship.schemas import ChampionshipResponse
 
 client = TestClient(app)
 
@@ -80,3 +81,50 @@ def test_get_championships(mock_championship_gen):
     assert len(response_body) == 4
     for index, champ in enumerate(response_body):
         assert champ["name"] == names_in_correct_order[index]
+
+
+@time_machine.travel("2025-01-01")
+def test_update_championship_success(mock_championship):
+    champ_before_update = mock_championship
+
+    data = {
+        "name": f"NovoChamp {uuid4()}",
+        "start_date": "2024-11-21",
+        "end_date": "2025-01-21",
+        "is_league_format": True,
+        "final_stage": None,
+        "final_position": None,
+    }
+    response = client.patch(f"/championships/{str(champ_before_update.id)}", json=data)
+    assert response.status_code == 200
+
+    response_body = response.json()
+    ChampionshipResponse.model_validate(response_body)
+    assert response_body["name"] == data["name"]
+    assert response_body["start_date"] == data["start_date"]
+    assert response_body["end_date"] == data["end_date"]
+    assert response_body["is_league_format"] == data["is_league_format"]
+    assert response_body["final_stage"] == data["final_stage"]
+    assert response_body["final_position"] == data["final_position"]
+    assert response_body["status"] == ChampionshipStatus.EM_ANDAMENTO
+
+
+def test_error_update_championship_with_same_name(mock_championship_gen):
+    champ1 = mock_championship_gen()
+    champ2 = mock_championship_gen()
+
+    data = {
+        "name": champ1.name,
+        "start_date": "2024-11-21",
+        "end_date": "2025-01-21",
+        "is_league_format": True,
+        "final_stage": None,
+        "final_position": None,
+    }
+
+    response = client.patch(f"/championships/{str(champ2.id)}", json=data)
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "Já existe um campeonato com este nome cadastrado no sistema"
+    )
