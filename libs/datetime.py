@@ -1,8 +1,13 @@
 from datetime import datetime, timezone, date
+from zoneinfo import ZoneInfo
 
 
 def utcnow():
     return datetime.now(timezone.utc)
+
+
+def brasilia_now():
+    return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
 
 def this_day_next_month(reference_date: date | None = None) -> date:
