@@ -11,6 +11,7 @@ from api.healthcheck import router as healthcheck_router
 from bounded_contexts.team.routers import router as team_router
 from bounded_contexts.user.routers import router as user_router
 from bounded_contexts.storage.routers import router as storage_router
+from bounded_contexts.championship.routers import router as championship_router
 
 security = HTTPBasic()
 
@@ -39,6 +40,7 @@ app.include_router(team_router)
 app.include_router(user_router)
 app.include_router(storage_router)
 app.include_router(healthcheck_router)
+app.include_router(championship_router)
 
 
 @app.get("/", response_class=HTMLResponse)

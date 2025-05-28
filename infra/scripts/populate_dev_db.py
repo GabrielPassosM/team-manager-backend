@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from sqlmodel import select
 
+from bounded_contexts.championship.models import Championship, FinalStageOptions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
 from core.services.password import hash_password
@@ -44,6 +45,20 @@ def _populate() -> None:
             hashed_password=hash_password("1234"),
             is_super_admin=True,
         ),
+        Championship(
+            team_id=team1_id,
+            name="Champions League 2024",
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 30),
+            is_league_format=False,
+            final_stage=FinalStageOptions.SEMI_FINAL,
+        ),
+        Championship(
+            team_id=team1_id,
+            name="Brasileirão 2025",
+            start_date=date(2025, 1, 1),
+            is_league_format=True,
+        ),
     ]
 
     team2_id = uuid4()
@@ -74,6 +89,20 @@ def _populate() -> None:
             hashed_password=hash_password("1234"),
             is_super_admin=True,
         ),
+        Championship(
+            team_id=team2_id,
+            name="Chuteira de Aço 2024",
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 30),
+            is_league_format=False,
+            final_stage=FinalStageOptions.CAMPEAO,
+        ),
+        Championship(
+            team_id=team2_id,
+            name="Chuteira de Aço 2025",
+            start_date=date(2025, 4, 1),
+            is_league_format=False,
+        ),
     ]
 
     teams_mocks = [team1_mocks, team2_mocks]
@@ -81,7 +110,10 @@ def _populate() -> None:
     for team_mocks in teams_mocks:
         for mock in team_mocks:
             session.add(mock)
+            if isinstance(mock, Team):
+                session.flush()
     session.commit()
+    session.close()
 
 
 _populate()
