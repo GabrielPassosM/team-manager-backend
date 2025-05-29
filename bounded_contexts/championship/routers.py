@@ -57,3 +57,15 @@ async def update_championship(
     )
 
     return ChampionshipResponse.model_validate(champ_updated)
+
+
+@router.delete("/{champ_id}", status_code=204)
+async def delete_championship(
+    champ_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> None:
+    if not current_user.has_admin_privileges:
+        raise AdminRequired()
+
+    return service.delete_championship(champ_id, current_user, session)

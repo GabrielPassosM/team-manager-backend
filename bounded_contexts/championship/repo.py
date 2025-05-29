@@ -43,6 +43,13 @@ class ChampionshipWriteRepo(BaseRepo):
         self.session.refresh(championship)
         return championship
 
+    def delete(self, championship: Championship, current_user_id: UUID):
+        championship.deleted = True
+        championship.updated_at = utcnow()
+        championship.updated_by = current_user_id
+        self.session.merge(championship)
+        self.session.commit()
+
 
 class ChampionshipReadRepo(BaseRepo):
 

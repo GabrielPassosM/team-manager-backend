@@ -58,3 +58,11 @@ def update_championship(
     return ChampionshipWriteRepo(session=session).update(
         champ_to_update, update_data, current_user.id
     )
+
+
+def delete_championship(champ_id: UUID, current_user: User, session: Session) -> None:
+    champ_to_delete = ChampionshipReadRepo(session=session).get_by_id(champ_id)
+    if not champ_to_delete:
+        raise ChampionshipNotFound()
+
+    ChampionshipWriteRepo(session=session).delete(champ_to_delete, current_user.id)

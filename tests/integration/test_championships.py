@@ -128,3 +128,8 @@ def test_error_update_championship_with_same_name(mock_championship_gen):
         response.json()["detail"]
         == "Já existe um campeonato com este nome cadastrado no sistema"
     )
+
+
+def test_delete_championship(mock_championship):
+    response = client.delete(f"/championships/{str(mock_championship.id)}")
+    assert response.status_code == 204
