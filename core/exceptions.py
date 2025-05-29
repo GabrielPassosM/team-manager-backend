@@ -12,3 +12,9 @@ class AdminRequired(HTTPException):
 class SuperAdminRequired(HTTPException):
     status_code = 403
     detail = "You not that important."
+
+
+@dataclass
+class StartDateBiggerThanEnd(HTTPException):
+    status_code = 400
+    detail = "Data de início maior que data de término"

@@ -5,6 +5,7 @@ from uuid import uuid4, UUID
 import pytest
 
 from api.main import app
+from bounded_contexts.championship.models import Championship, FinalStageOptions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
 from core.services.auth import validate_user_token
@@ -158,6 +159,51 @@ def mock_user_gen(db_session, mock_team):
         _fake_user.is_super_admin = mock.is_super_admin
         _fake_user.team_id = mock.team_id
 
+        return mock
+
+    yield _make_mock
+
+
+@pytest.fixture(scope="function")
+def mock_championship(db_session, mock_team):
+    mock = Championship(
+        team_id=mock_team.id,
+        name=f"Campeonato {uuid4()}",
+        start_date=date(2022, 11, 20),
+        end_date=date(2022, 12, 18),
+        is_league_format=False,
+        final_stage=FinalStageOptions.CAMPEAO,
+    )
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
+
+    yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_championship_gen(db_session, mock_team):
+    def _make_mock(
+        team_id: UUID = None,
+        name: str = None,
+        start_date: date = date(2022, 11, 20),
+        end_date: date = None,
+        is_league_format: bool = False,
+        final_stage: FinalStageOptions | None = None,
+        final_position: int | None = None,
+    ):
+        mock = Championship(
+            team_id=team_id or mock_team.id,
+            name=name or f"Campeonato {uuid4()}",
+            start_date=start_date,
+            end_date=end_date,
+            is_league_format=is_league_format,
+            final_stage=final_stage,
+            final_position=final_position,
+        )
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
         return mock
 
     yield _make_mock
