@@ -3,6 +3,7 @@ from datetime import date
 from uuid import uuid4, UUID
 
 import pytest
+from sqlmodel import select
 
 from api.main import app
 from bounded_contexts.championship.models import Championship, FinalStageOptions
@@ -10,6 +11,7 @@ from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
 from core.services.auth import validate_user_token
 from core.services.password import hash_password
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 from infra.database import get_session
 from tests.database import (
     get_testing_session,
@@ -207,6 +209,34 @@ def mock_championship_gen(db_session, mock_team):
         return mock
 
     yield _make_mock
+
+
+@pytest.fixture(scope="function")
+def mock_friendly_championship(db_session, mock_team):
+    friendly_championship = db_session.exec(
+        select(Championship).where(
+            Championship.name == FRIENDLY_CHAMPIONSHIP_NAME,
+            Championship.team_id == mock_team.id,
+            Championship.deleted == False,
+        )
+    ).first()
+
+    if friendly_championship:
+        return friendly_championship
+
+    mock = Championship(
+        team_id=mock_team.id,
+        name=FRIENDLY_CHAMPIONSHIP_NAME,
+        start_date=date(2022, 11, 20),
+        end_date=date(2022, 12, 18),
+        is_league_format=False,
+        final_stage=FinalStageOptions.CAMPEAO,
+    )
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
+
+    yield mock
 
 
 def _validate_user_token_testing() -> User:

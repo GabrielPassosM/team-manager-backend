@@ -26,9 +26,7 @@ async def create_championship(
     if not current_user.has_admin_privileges:
         raise AdminRequired()
 
-    championship = service.create_championship(
-        create_data, current_user.team_id, session, current_user
-    )
+    championship = service.create_championship(create_data, current_user, session)
     return ChampionshipResponse.model_validate(championship)
 
 

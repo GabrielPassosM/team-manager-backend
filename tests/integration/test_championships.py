@@ -7,6 +7,7 @@ import time_machine
 from api.main import app
 from bounded_contexts.championship.models import FinalStageOptions, ChampionshipStatus
 from bounded_contexts.championship.schemas import ChampionshipResponse
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 
 client = TestClient(app)
 
@@ -130,6 +131,32 @@ def test_error_update_championship_with_same_name(mock_championship_gen):
     )
 
 
+def test_error_update_championship_friendly(mock_friendly_championship):
+    data = {
+        "name": "Editando Amistosos",
+        "start_date": "2024-11-21",
+        "is_league_format": True,
+    }
+
+    response = client.patch(
+        f"/championships/{str(mock_friendly_championship.id)}", json=data
+    )
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == f"Não é possível editar o campeonato {FRIENDLY_CHAMPIONSHIP_NAME}"
+    )
+
+
 def test_delete_championship(mock_championship):
     response = client.delete(f"/championships/{str(mock_championship.id)}")
     assert response.status_code == 204
+
+
+def test_error_delete_championship_friendly(mock_friendly_championship):
+    response = client.delete(f"/championships/{str(mock_friendly_championship.id)}")
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == f"Não é possível deletar o campeonato {FRIENDLY_CHAMPIONSHIP_NAME}"
+    )

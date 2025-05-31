@@ -43,3 +43,16 @@ class TeamUpdate(_TeamBase):
 
 class CurrentTeamResponse(BaseSchema, _TeamBase):
     paid_until: date
+
+
+class TeamRegister(TeamCreate):
+    """
+    /admin
+    """
+
+    # If only needs to create the base models
+    team_id: UUID | None = None
+
+    # ---- User super admin ----
+    user_email: str
+    user_password: str

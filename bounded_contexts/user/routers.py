@@ -54,7 +54,7 @@ async def create_user(
     if not current_user.has_admin_privileges:
         raise AdminRequired()
 
-    return service.create_user(user_data, current_user.team_id, session)
+    return service.create_user(user_data, current_user, session)
 
 
 @router.get("/team-users", status_code=200)
