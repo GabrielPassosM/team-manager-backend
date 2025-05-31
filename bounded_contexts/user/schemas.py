@@ -11,6 +11,7 @@ class UserCreate(BaseModel):
     email: str
     password: str
     is_admin: bool = False
+    is_super_admin: bool = False
 
     @field_validator("password", mode="before")
     @classmethod

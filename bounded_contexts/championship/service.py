@@ -18,16 +18,18 @@ from bounded_contexts.user.models import User
 
 
 def create_championship(
-    create_data: ChampionshipCreate, team_id: UUID, session: Session, current_user: User
+    create_data: ChampionshipCreate, current_user: User, session: Session
 ) -> Championship:
-    if not TeamReadRepo(session=session).get_by_id(team_id):
+    if not TeamReadRepo(session=session).get_by_id(current_user.team_id):
         raise TeamNotFound()
 
-    if ChampionshipReadRepo(session=session).get_by_name(create_data.name, team_id):
+    if ChampionshipReadRepo(session=session).get_by_name(
+        create_data.name, current_user.team_id
+    ):
         raise ChampionshipAlreadyExists()
 
     return ChampionshipWriteRepo(session=session).save(
-        create_data, team_id, current_user.id
+        create_data, current_user.team_id, current_user.id
     )
 
 

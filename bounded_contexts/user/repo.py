@@ -10,11 +10,14 @@ from libs.datetime import utcnow
 
 
 class UserWriteRepo(BaseRepo):
-    def save(self, user_data: UserCreate, team_id: UUID, hashed_password: str) -> User:
+    def save(
+        self, user_data: UserCreate, current_user: User, hashed_password: str
+    ) -> User:
         user_data = user_data.model_dump()
-        user_data["team_id"] = team_id
+        user_data["team_id"] = current_user.team_id
         user_data["hashed_password"] = hashed_password
         user_data.pop("password")
+        user_data["created_by"] = current_user.id
 
         user = User(**user_data)
         self.session.add(user)
@@ -138,3 +141,12 @@ class UserReadRepo(BaseRepo):
                 User.deleted == False,
             )
         ).all()
+
+    def get_team_super_user(self, team_id: UUID) -> User | None:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.team_id == team_id,
+                User.is_super_admin == True,
+                User.deleted == False,
+            )
+        ).first()

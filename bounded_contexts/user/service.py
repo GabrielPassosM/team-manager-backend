@@ -13,7 +13,7 @@ from bounded_contexts.user.exceptions import (
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
 from bounded_contexts.user.schemas import UserCreate, UserUpdate
-from core.exceptions import AdminRequired
+from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.password import verify_password, hash_password
 
 
@@ -25,16 +25,19 @@ def authenticate_user(email: str, password: str, session: Session) -> User:
     return user
 
 
-def create_user(user_data: UserCreate, team_id: UUID, session: Session) -> User:
-    if not TeamReadRepo(session=session).get_by_id(team_id):
+def create_user(user_data: UserCreate, current_user: User, session: Session) -> User:
+    if not TeamReadRepo(session=session).get_by_id(current_user.team_id):
         raise TeamNotFound()
 
     if UserReadRepo(session=session).get_by_email(user_data.email):
         raise EmailAlreadyInUse()
 
+    if not current_user.is_super_admin and user_data.is_super_admin:
+        raise SuperAdminRequired()
+
     hashed_password = hash_password(user_data.password)
 
-    return UserWriteRepo(session=session).save(user_data, team_id, hashed_password)
+    return UserWriteRepo(session=session).save(user_data, current_user, hashed_password)
 
 
 def update_user(
