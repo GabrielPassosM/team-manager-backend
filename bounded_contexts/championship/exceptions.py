@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from fastapi import HTTPException
 
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
+
 
 @dataclass
 class ChampionshipAlreadyExists(HTTPException):
@@ -31,3 +33,15 @@ class LeagueFormatCantHaveFinalStage(HTTPException):
 class KnockOutCantHaveFinalPosition(HTTPException):
     status_code = 400
     detail = "Campeonato mata-mata deve ter colocação final em estágio, e não em número"
+
+
+@dataclass
+class CantEditFriendlyChampionship(HTTPException):
+    status_code = 400
+    detail = f"Não é possível editar o campeonato {FRIENDLY_CHAMPIONSHIP_NAME}"
+
+
+@dataclass
+class CantDeleteFriendlyChampionship(HTTPException):
+    status_code = 400
+    detail = f"Não é possível deletar o campeonato {FRIENDLY_CHAMPIONSHIP_NAME}"

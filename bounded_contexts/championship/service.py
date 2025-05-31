@@ -5,6 +5,8 @@ from sqlmodel import Session
 from bounded_contexts.championship.exceptions import (
     ChampionshipAlreadyExists,
     ChampionshipNotFound,
+    CantEditFriendlyChampionship,
+    CantDeleteFriendlyChampionship,
 )
 from bounded_contexts.championship.models import Championship
 from bounded_contexts.championship.repo import (
@@ -15,6 +17,7 @@ from bounded_contexts.championship.schemas import ChampionshipCreate, Championsh
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 
 
 def create_championship(
@@ -49,6 +52,9 @@ def update_championship(
     if not champ_to_update:
         raise ChampionshipNotFound()
 
+    if champ_to_update.name == FRIENDLY_CHAMPIONSHIP_NAME:
+        raise CantEditFriendlyChampionship()
+
     if ChampionshipUpdate.model_validate(champ_to_update) == update_data:
         return champ_to_update
 
@@ -66,5 +72,8 @@ def delete_championship(champ_id: UUID, current_user: User, session: Session) ->
     champ_to_delete = ChampionshipReadRepo(session=session).get_by_id(champ_id)
     if not champ_to_delete:
         raise ChampionshipNotFound()
+
+    if champ_to_delete.name == FRIENDLY_CHAMPIONSHIP_NAME:
+        raise CantDeleteFriendlyChampionship()
 
     ChampionshipWriteRepo(session=session).delete(champ_to_delete, current_user.id)
