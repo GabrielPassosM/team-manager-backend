@@ -58,8 +58,6 @@ def upgrade() -> None:
         op.f("ix_championship_is_league_format"), "championship", ["is_league_format"]
     )
 
-    sa.UniqueConstraint("team_id", "name", name="uq_championship_team_id_name")
-
 
 def downgrade() -> None:
     """Downgrade schema."""

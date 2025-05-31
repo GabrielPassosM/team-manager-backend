@@ -7,6 +7,7 @@ from bounded_contexts.championship.models import Championship, FinalStageOptions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
 from core.services.password import hash_password
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 from infra.database import get_session
 
 
@@ -44,6 +45,12 @@ def _populate() -> None:
             email="superuser@demofc.com",
             hashed_password=hash_password("1234"),
             is_super_admin=True,
+        ),
+        Championship(
+            team_id=team1_id,
+            name=FRIENDLY_CHAMPIONSHIP_NAME,
+            start_date=date(1800, 1, 1),
+            is_league_format=True,
         ),
         Championship(
             team_id=team1_id,
@@ -88,6 +95,12 @@ def _populate() -> None:
             email="superuser@tribunata.com",
             hashed_password=hash_password("1234"),
             is_super_admin=True,
+        ),
+        Championship(
+            team_id=team2_id,
+            name=FRIENDLY_CHAMPIONSHIP_NAME,
+            start_date=date(1800, 1, 1),
+            is_league_format=True,
         ),
         Championship(
             team_id=team2_id,
