@@ -26,6 +26,11 @@ class FinalStageOptions(str, Enum):
     CAMPEAO = "campeao"
 
 
+class ChampionshipFormats(str, Enum):
+    KNOCKOUT = "knockout"
+    LEAGUE = "league"
+
+
 class Championship(BaseTable, table=True):
     team_id: UUID = Field(foreign_key="team.id", index=True)
     name: str = Field(min_length=1, max_length=255)

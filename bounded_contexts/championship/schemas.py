@@ -1,14 +1,18 @@
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, field_validator
 
 from bounded_contexts.championship.exceptions import (
     FinalAttributeWithoutEndDate,
     KnockOutCantHaveFinalPosition,
     LeagueFormatCantHaveFinalStage,
 )
-from bounded_contexts.championship.models import ChampionshipStatus, FinalStageOptions
+from bounded_contexts.championship.models import (
+    ChampionshipStatus,
+    FinalStageOptions,
+    ChampionshipFormats,
+)
 from core.exceptions import StartDateBiggerThanEnd
 from core.schemas import BaseSchema
 
@@ -57,3 +61,48 @@ class ChampionshipCreate(_ChampionshipBase):
 
 class ChampionshipUpdate(BaseSchema, _ChampionshipBase):
     pass
+
+
+class ChampionshipFilter(BaseModel):
+    name: str | None = None
+    status: list[ChampionshipStatus] | None = None
+    start_date_from: date | None = None
+    start_date_to: date | None = None
+    end_date_from: date | None = None
+    end_date_to: date | None = None
+    format: ChampionshipFormats | None = None
+    final_position_from: int | None = None
+    final_position_to: int | None = None
+    final_stages: list[FinalStageOptions] | None = None
+
+    order_by: str | None = None
+
+    @property
+    def is_empty(self) -> bool:
+        return all(
+            value is None or (isinstance(value, list) and not value)
+            for value in self.model_dump().values()
+        )
+
+    @model_validator(mode="after")
+    def validate_status_and_dates_are_exclusionary(self):
+        if self.status and any(
+            [
+                self.start_date_to,
+                self.start_date_from,
+                self.end_date_to,
+                self.end_date_from,
+            ]
+        ):
+            raise ValueError("status and date filters are mutually exclusive.")
+        return self
+
+    @field_validator("order_by")
+    @classmethod
+    def validate_order_by_options(cls, v):
+        if v is None:
+            return v
+        options = ["start_date_asc", "start_date_desc", "end_date_asc", "end_date_desc"]
+        if v not in options:
+            raise ValueError(f"order_by must be one of {options}")
+        return v
