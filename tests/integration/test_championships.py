@@ -5,7 +5,11 @@ from fastapi.testclient import TestClient
 import time_machine
 
 from api.main import app
-from bounded_contexts.championship.models import FinalStageOptions, ChampionshipStatus
+from bounded_contexts.championship.models import (
+    FinalStageOptions,
+    ChampionshipStatus,
+    ChampionshipFormats,
+)
 from bounded_contexts.championship.schemas import ChampionshipResponse
 from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 
@@ -160,3 +164,79 @@ def test_error_delete_championship_friendly(mock_friendly_championship):
         response.json()["detail"]
         == f"Não é possível deletar o campeonato {FRIENDLY_CHAMPIONSHIP_NAME}"
     )
+
+
+@time_machine.travel("2025-01-01")
+def test_filter_championships(clean_db, mock_championship_gen):
+    champ1 = mock_championship_gen(
+        name="Champ1", start_date=date(2024, 12, 15), end_date=date(2025, 1, 15)
+    )
+    champ2 = mock_championship_gen(
+        name="2champ2",
+        start_date=date(2023, 12, 15),
+        end_date=date(2024, 1, 15),
+        final_stage=FinalStageOptions.QUARTAS_DE_FINAL,
+    )
+    champ3 = mock_championship_gen(
+        start_date=date(2024, 1, 15),
+        end_date=date(2024, 12, 15),
+        is_league_format=True,
+        final_position=5,
+    )
+    champ4 = mock_championship_gen(
+        start_date=date(2025, 5, 1), end_date=date(2025, 6, 1)
+    )
+
+    data = {"name": "champ"}
+    response = client.post("/championships/filter", json=data)
+    assert response.status_code == 200
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert response_body[0]["id"] == str(champ1.id)
+    assert response_body[1]["id"] == str(champ2.id)
+
+    data["order_by"] = "start_date_asc"
+    response = client.post("/championships/filter", json=data)
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert response_body[0]["id"] == str(champ2.id)
+    assert response_body[1]["id"] == str(champ1.id)
+
+    data["status"] = [ChampionshipStatus.EM_ANDAMENTO]
+    response = client.post("/championships/filter", json=data)
+    response_body = response.json()
+    assert len(response_body) == 1
+    assert response_body[0]["id"] == str(champ1.id)
+
+    data = {
+        "status": [ChampionshipStatus.FINALIZADO, ChampionshipStatus.NAO_INICIADO],
+    }
+    response = client.post("/championships/filter", json=data)
+    response_body = response.json()
+    assert len(response_body) == 3
+    assert response_body[0]["id"] == str(champ2.id)
+    assert response_body[1]["id"] == str(champ3.id)
+    assert response_body[2]["id"] == str(champ4.id)
+
+    data["format"] = ChampionshipFormats.LEAGUE
+    response = client.post("/championships/filter", json=data)
+    response_body = response.json()
+    assert len(response_body) == 1
+    assert response_body[0]["id"] == str(champ3.id)
+
+    data["format"] = ChampionshipFormats.KNOCKOUT
+    data["final_stages"] = [FinalStageOptions.QUARTAS_DE_FINAL]
+    response = client.post("/championships/filter", json=data)
+    response_body = response.json()
+    assert len(response_body) == 1
+    assert response_body[0]["id"] == str(champ2.id)
+
+    data = {
+        "start_date_from": "2024-01-01",
+        "end_date_from": "2025-01-01",
+    }
+    response = client.post("/championships/filter", json=data)
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert response_body[0]["id"] == str(champ1.id)
+    assert response_body[1]["id"] == str(champ4.id)

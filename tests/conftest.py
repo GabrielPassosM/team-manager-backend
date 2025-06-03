@@ -17,6 +17,7 @@ from tests.database import (
     get_testing_session,
     init_test_db,
     remove_test_db,
+    clean_db,  # import to make sure it runs
     TestingSessionLocal,
 )
 

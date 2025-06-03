@@ -8,6 +8,7 @@ from bounded_contexts.championship.schemas import (
     ChampionshipCreate,
     ChampionshipResponse,
     ChampionshipUpdate,
+    ChampionshipFilter,
 )
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
@@ -37,6 +38,21 @@ async def get_championships(
 ) -> list[ChampionshipResponse]:
     championships = service.get_championships_by_team(current_user.team_id, session)
 
+    return [ChampionshipResponse.model_validate(champ) for champ in championships]
+
+
+@router.post("/filter", status_code=200)
+async def filter_championships(
+    filter_data: ChampionshipFilter,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[ChampionshipResponse]:
+    if filter_data.is_empty:
+        championships = service.get_championships_by_team(current_user.team_id, session)
+    else:
+        championships = service.filter_championships(
+            current_user.team_id, filter_data, session
+        )
     return [ChampionshipResponse.model_validate(champ) for champ in championships]
 
 

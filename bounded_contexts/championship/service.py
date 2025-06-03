@@ -13,7 +13,11 @@ from bounded_contexts.championship.repo import (
     ChampionshipReadRepo,
     ChampionshipWriteRepo,
 )
-from bounded_contexts.championship.schemas import ChampionshipCreate, ChampionshipUpdate
+from bounded_contexts.championship.schemas import (
+    ChampionshipCreate,
+    ChampionshipUpdate,
+    ChampionshipFilter,
+)
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
@@ -40,6 +44,12 @@ def get_championships_by_team(team_id: UUID, session: Session) -> list[Champions
     return ChampionshipReadRepo(session=session).get_all_order_by_status_and_start_date(
         team_id
     )
+
+
+def filter_championships(
+    team_id: UUID, filter_data: ChampionshipFilter, session: Session
+) -> list[Championship]:
+    return ChampionshipReadRepo(session=session).get_by_filters(team_id, filter_data)
 
 
 def update_championship(

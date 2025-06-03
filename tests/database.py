@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel, Session
@@ -20,6 +21,12 @@ def init_test_db():
 def remove_test_db():
     if os.path.exists(DATABASE_FILE):
         os.remove(DATABASE_FILE)
+
+
+@pytest.fixture()
+def clean_db():
+    SQLModel.metadata.drop_all(engine)
+    SQLModel.metadata.create_all(engine)
 
 
 def get_testing_session():
