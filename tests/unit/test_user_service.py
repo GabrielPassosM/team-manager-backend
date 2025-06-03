@@ -15,6 +15,7 @@ class _UserTest:
         self.is_super_admin = is_super_admin
         self.is_admin = is_admin
         self.has_admin_privileges = is_super_admin or is_admin
+        self.email = None
 
 
 @pytest.mark.parametrize(
