@@ -50,11 +50,12 @@ async def create_user(
     user_data: UserCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
-) -> User:
+) -> UserResponse:
     if not current_user.has_admin_privileges:
         raise AdminRequired()
 
-    return service.create_user(user_data, current_user, session)
+    created_user = service.create_user(user_data, current_user, session)
+    return UserResponse.model_validate(created_user)
 
 
 @router.get("/team-users", status_code=200)

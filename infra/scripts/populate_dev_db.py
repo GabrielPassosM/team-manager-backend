@@ -6,6 +6,7 @@ from sqlmodel import select
 from bounded_contexts.championship.models import Championship, FinalStageOptions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
+from core.consts import DEMO_USER_EMAIL
 from core.services.password import hash_password
 from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 from infra.database import get_session
@@ -29,7 +30,7 @@ def _populate() -> None:
         User(
             team_id=team1_id,
             name="Usuário Demo",
-            email="usuariodemo@gamalabs.com",
+            email=DEMO_USER_EMAIL,
             hashed_password=hash_password("gamalabs#demo"),
             is_admin=True,
         ),

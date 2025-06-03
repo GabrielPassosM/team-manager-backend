@@ -18,8 +18,8 @@ def test_create_user(mock_team):
     }
     response = client.post("/users", json=data)
     assert response.status_code == 201
-    assert isinstance(response.json(), dict)
-    assert "id" in response.json()
+    response_body = response.json()
+    UserResponse.model_validate(response_body)
 
 
 def test_error_create_user_with_long_password(mock_team):

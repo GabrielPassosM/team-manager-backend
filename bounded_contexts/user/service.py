@@ -13,7 +13,8 @@ from bounded_contexts.user.exceptions import (
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
 from bounded_contexts.user.schemas import UserCreate, UserUpdate
-from core.exceptions import AdminRequired, SuperAdminRequired
+from core.consts import DEMO_USER_EMAIL
+from core.exceptions import AdminRequired, SuperAdminRequired, CantUpdateDemoUser
 from core.services.password import verify_password, hash_password
 
 
@@ -71,6 +72,9 @@ def update_user(
 def _validate_update_request(
     current_user: User, user_to_update: User, user_data: UserUpdate
 ) -> None:
+    if user_to_update.email == DEMO_USER_EMAIL and not current_user.is_super_admin:
+        raise CantUpdateDemoUser()
+
     if current_user.is_super_admin or current_user.id == user_to_update.id:
         return
 
