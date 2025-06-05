@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 
 from api.htmls.index_html import INDEX_HTML
+from bounded_contexts.user.models import User
 from core import settings
 from api.admin import router as admin_router
 from api.healthcheck import router as healthcheck_router
@@ -12,8 +14,10 @@ from bounded_contexts.team.routers import router as team_router
 from bounded_contexts.user.routers import router as user_router
 from bounded_contexts.storage.routers import router as storage_router
 from bounded_contexts.championship.routers import router as championship_router
+from infra.logger import configure_logger
 
 security = HTTPBasic()
+configure_logger()
 
 app = FastAPI(
     title="Team Manager Backend",
@@ -41,6 +45,15 @@ app.include_router(user_router)
 app.include_router(storage_router)
 app.include_router(healthcheck_router)
 app.include_router(championship_router)
+
+
+@app.exception_handler(Exception)
+async def internal_server_error_handler(request: Request, exc: Exception):
+    logger.exception(f"Erro inesperado em {request.url.path}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno no servidor. Tente novamente mais tarde."},
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
