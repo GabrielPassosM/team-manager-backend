@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
+from random import randint
 from uuid import uuid4, UUID
 
 import pytest
@@ -7,6 +8,7 @@ from sqlmodel import select
 
 from api.main import app
 from bounded_contexts.championship.models import Championship, FinalStageOptions
+from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
 from core.services.auth import validate_user_token
@@ -238,6 +240,46 @@ def mock_friendly_championship(db_session, mock_team):
     db_session.refresh(mock)
 
     yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_player(db_session, mock_team):
+    mock = Player(
+        team_id=mock_team.id,
+        name=f"Jogador {uuid4()}",
+        image_url="https://example.com/player.jpg",
+        shirt_number=10,
+        position=PlayerPositions.ATACANTE,
+    )
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
+
+    yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_player_gen(db_session, mock_team):
+    def _make_mock(
+        team_id: UUID = None,
+        name: str = None,
+        image_url: str = "https://example.com/player.jpg",
+        shirt_number: int = None,
+        position: PlayerPositions = PlayerPositions.ATACANTE,
+    ):
+        mock = Player(
+            team_id=team_id or mock_team.id,
+            name=name or f"Jogador {uuid4()}",
+            image_url=image_url,
+            shirt_number=shirt_number or randint(1, 99),
+            position=position,
+        )
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
+        return mock
+
+    yield _make_mock
 
 
 def _validate_user_token_testing() -> User:

@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlmodel import select
 
 from bounded_contexts.championship.models import Championship, FinalStageOptions
+from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
 from core.consts import DEMO_USER_EMAIL
@@ -67,6 +68,18 @@ def _populate() -> None:
             start_date=date(2025, 1, 1),
             is_league_format=True,
         ),
+        Player(
+            team_id=team1_id,
+            name="Jose da Silva",
+            shirt_number=5,
+            position=PlayerPositions.VOLANTE,
+        ),
+        Player(
+            team_id=team1_id,
+            name="Roberto Carlos",
+            shirt_number=13,
+            position=PlayerPositions.ZAGUEIRO,
+        ),
     ]
 
     team2_id = uuid4()
@@ -116,6 +129,18 @@ def _populate() -> None:
             name="Chuteira de Aço 2025",
             start_date=date(2025, 4, 1),
             is_league_format=False,
+        ),
+        Player(
+            team_id=team2_id,
+            name="Jose da Silva",
+            shirt_number=8,
+            position=PlayerPositions.MEIO_CAMPO,
+        ),
+        Player(
+            team_id=team2_id,
+            name="Marcelo",
+            shirt_number=1,
+            position=PlayerPositions.GOLEIRO,
         ),
     ]
 

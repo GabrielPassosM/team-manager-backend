@@ -14,6 +14,7 @@ from bounded_contexts.team.routers import router as team_router
 from bounded_contexts.user.routers import router as user_router
 from bounded_contexts.storage.routers import router as storage_router
 from bounded_contexts.championship.routers import router as championship_router
+from bounded_contexts.player.routers import router as player_router
 from infra.logger import configure_logger
 
 security = HTTPBasic()
@@ -45,6 +46,7 @@ app.include_router(user_router)
 app.include_router(storage_router)
 app.include_router(healthcheck_router)
 app.include_router(championship_router)
+app.include_router(player_router)
 
 
 @app.exception_handler(Exception)
