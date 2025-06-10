@@ -1,6 +1,6 @@
 from fastapi import UploadFile
 
-from core.settings import TEAMS_BUCKET
+from core.settings import TEAMS_BUCKET, ENV_CONFIG
 from infra.supabase_sdk import supabase
 
 
@@ -24,6 +24,9 @@ def delete_player_image_from_bucket(image_url: str) -> None:
     file_path = image_url.split(f"/{TEAMS_BUCKET}/")[-1]
     if file_path[-1] == "?":
         file_path = file_path[:-1]
+
+    if ENV_CONFIG == "test":
+        return
 
     supabase.storage.from_(TEAMS_BUCKET).remove([file_path])
 
