@@ -41,3 +41,32 @@ def test_get_players(mock_player_gen):
     assert response_body[1]["id"] == str(player1.id)
     assert response_body[2]["id"] == str(player3.id)
     PlayerResponse.model_validate(response_body[0])
+
+
+def test_update_player(mock_player):
+    player_before_update = mock_player
+
+    update_data = {
+        "name": "New Name",
+        "shirt_number": 9,
+        "image_url": "test_image_url.jpg",
+        "position": PlayerPositions.ALA,
+    }
+
+    response = client.patch(
+        f"/players/{str(player_before_update.id)}", json=update_data
+    )
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert response_body["id"] == str(player_before_update.id)
+    assert response_body["name"] == update_data["name"]
+    assert response_body["shirt_number"] == update_data["shirt_number"]
+    assert response_body["image_url"] == update_data["image_url"]
+    assert response_body["position"] == update_data["position"]
+    PlayerResponse.model_validate(response_body)
+
+
+def test_delete_player(mock_player):
+    response = client.delete(f"/players/{str(mock_player.id)}")
+    assert response.status_code == 204

@@ -3,8 +3,9 @@ from uuid import UUID
 from sqlmodel import select
 
 from bounded_contexts.player.models import Player
-from bounded_contexts.player.schemas import PlayerCreate
+from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate
 from core.repo import BaseRepo
+from libs.datetime import utcnow
 
 
 class PlayerWriteRepo(BaseRepo):
@@ -21,6 +22,32 @@ class PlayerWriteRepo(BaseRepo):
         self.session.refresh(player)
         return player
 
+    def update(
+        self,
+        player: Player,
+        update_data: PlayerUpdate,
+        current_user_id: UUID,
+    ):
+        for key, value in update_data.model_dump().items():
+            if key == "id":
+                continue
+            setattr(player, key, value)
+
+        player.updated_at = utcnow()
+        player.updated_by = current_user_id
+
+        self.session.merge(player)
+        self.session.commit()
+        self.session.refresh(player)
+        return player
+
+    def delete(self, player: Player, current_user_id: UUID) -> None:
+        player.deleted = True
+        player.updated_at = utcnow()
+        player.updated_by = current_user_id
+        self.session.merge(player)
+        self.session.commit()
+
 
 class PlayerReadRepo(BaseRepo):
     def get_all(self, team_id: UUID) -> list[Player]:
@@ -32,3 +59,11 @@ class PlayerReadRepo(BaseRepo):
             )
             .order_by(Player.name)
         ).all()
+
+    def get_by_id(self, player_id: UUID) -> Player | None:
+        return self.session.exec(
+            select(Player).where(  # type: ignore
+                Player.id == player_id,
+                Player.deleted == False,
+            )
+        ).first()

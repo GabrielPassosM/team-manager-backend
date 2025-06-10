@@ -20,6 +20,14 @@ async def upload_player_image(file: UploadFile, team_id: str, player_id: str) ->
     return _make_upload(file_path, file_content, file.content_type)
 
 
+def delete_player_image_from_bucket(image_url: str) -> None:
+    file_path = image_url.split(f"/{TEAMS_BUCKET}/")[-1]
+    if file_path[-1] == "?":
+        file_path = file_path[:-1]
+
+    supabase.storage.from_(TEAMS_BUCKET).remove([file_path])
+
+
 def _make_upload(file_path: str, file_content: bytes, content_type: str) -> str:
     supabase.storage.from_(TEAMS_BUCKET).remove([file_path])
 

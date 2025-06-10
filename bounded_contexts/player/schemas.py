@@ -27,3 +27,10 @@ class PlayerCreate(BaseModel):
     image_url: str | None = None
     shirt_number: int | None = None
     position: PlayerPositions
+
+
+class PlayerUpdate(BaseSchema):
+    name: str | None = None
+    image_url: str | None = None
+    shirt_number: int | None = None
+    position: PlayerPositions | None = None
