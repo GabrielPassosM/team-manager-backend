@@ -16,7 +16,7 @@ security = HTTPBearer()
 @dataclass
 class _InvalidAccessToken(HTTPException):
     status_code = 401
-    detail = "Não foi possível validar o token de acesso"
+    detail = "Sessão expirada ou inválida. Por favor, faça login novamente."
     headers = {"WWW-Authenticate": "Bearer"}
 
 
