@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlmodel import select
 
 from bounded_contexts.player.models import Player
-from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate
+from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate, PlayerFilter
 from core.repo import BaseRepo
 from libs.datetime import utcnow
 
@@ -67,3 +67,38 @@ class PlayerReadRepo(BaseRepo):
                 Player.deleted == False,
             )
         ).first()
+
+    def get_by_filters(self, team_id: UUID, filter_data: PlayerFilter) -> list[Player]:
+        query = select(Player).where(
+            Player.team_id == team_id,
+            Player.deleted == False,
+        )
+
+        if filter_data.name:
+            query = query.where(Player.name.ilike(f"%{filter_data.name}%"))
+        if filter_data.shirt_number:
+            query = query.where(Player.shirt_number == filter_data.shirt_number)
+        if filter_data.positions:
+            positions_values = [position.value for position in filter_data.positions]
+            query = query.where(Player.position.in_(positions_values))
+
+        if filter_data.order_by:
+            column_name = filter_data.order_by.rpartition("_")[0]
+            direction = filter_data.order_by.rpartition("_")[-1]
+
+            descending = False
+            if direction == "desc":
+                descending = True
+
+            sortable_fields: dict[str, ColumnElement] = {  # type: ignore
+                "name": Player.name,
+                "shirt_number": Player.shirt_number,
+            }
+
+            field_to_order = sortable_fields[column_name]
+            if descending:
+                query = query.order_by(field_to_order.desc())
+            else:
+                query = query.order_by(field_to_order.asc())
+
+        return self.session.exec(query).all()

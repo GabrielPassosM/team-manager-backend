@@ -5,7 +5,7 @@ from sqlmodel import Session
 from bounded_contexts.player.exceptions import PlayerNotFound
 from bounded_contexts.player.models import Player
 from bounded_contexts.player.repo import PlayerReadRepo, PlayerWriteRepo
-from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate
+from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate, PlayerFilter
 from bounded_contexts.storage.service import delete_player_image_from_bucket
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
@@ -51,3 +51,9 @@ def delete_player(player_id: UUID, session: Session, current_user_id: UUID) -> N
         delete_player_image_from_bucket(player_to_delete.image_url)
 
     PlayerWriteRepo(session=session).delete(player_to_delete, current_user_id)
+
+
+def filter_players(
+    team_id: UUID, filter_data: PlayerFilter, session: Session
+) -> list[Player]:
+    return PlayerReadRepo(session=session).get_by_filters(team_id, filter_data)
