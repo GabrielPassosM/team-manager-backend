@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from bounded_contexts.player.models import PlayerPositions
 from core.schemas import BaseSchema
@@ -34,3 +34,28 @@ class PlayerUpdate(BaseSchema):
     image_url: str | None = None
     shirt_number: int | None = None
     position: PlayerPositions | None = None
+
+
+class PlayerFilter(BaseModel):
+    name: str | None = None
+    shirt_number: int | None = None
+    positions: list[PlayerPositions] | None = None
+
+    order_by: str | None = None
+
+    @property
+    def is_empty(self) -> bool:
+        return all(
+            value is None or (isinstance(value, list) and not value)
+            for value in self.model_dump().values()
+        )
+
+    @field_validator("order_by")
+    @classmethod
+    def validate_order_by_options(cls, v):
+        if v is None:
+            return v
+        options = ["name_asc", "name_desc", "shirt_number_asc", "shirt_number_desc"]
+        if v not in options:
+            raise ValueError(f"order_by must be one of {options}")
+        return v

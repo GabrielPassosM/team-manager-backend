@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from bounded_contexts.player import service
-from bounded_contexts.player.schemas import PlayerResponse, PlayerCreate, PlayerUpdate
+from bounded_contexts.player.schemas import (
+    PlayerResponse,
+    PlayerCreate,
+    PlayerUpdate,
+    PlayerFilter,
+)
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
 from core.services.auth import validate_user_token
@@ -63,3 +68,16 @@ async def delete_player(
         raise AdminRequired()
 
     service.delete_player(player_id, session, current_user.id)
+
+
+@router.post("/filter", status_code=200)
+async def filter_players(
+    filter_data: PlayerFilter,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[PlayerResponse]:
+    if filter_data.is_empty:
+        players = service.get_players_by_team(current_user.team_id, session)
+    else:
+        players = service.filter_players(current_user.team_id, filter_data, session)
+    return [PlayerResponse.model_validate(player) for player in players]
