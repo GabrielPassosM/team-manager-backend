@@ -59,3 +59,9 @@ class PlayerFilter(BaseModel):
         if v not in options:
             raise ValueError(f"order_by must be one of {options}")
         return v
+
+
+class PlayerWithoutUserResponse(BaseSchema):
+    id: UUID
+    name: str
+    shirt_number: int | None = None

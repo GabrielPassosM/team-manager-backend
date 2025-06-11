@@ -57,3 +57,7 @@ def filter_players(
     team_id: UUID, filter_data: PlayerFilter, session: Session
 ) -> list[Player]:
     return PlayerReadRepo(session=session).get_by_filters(team_id, filter_data)
+
+
+def get_players_without_user(team_id: UUID, session: Session) -> list[Player]:
+    return PlayerReadRepo(session=session).get_all_without_user(team_id)

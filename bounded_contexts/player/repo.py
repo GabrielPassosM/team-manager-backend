@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlmodel import select
 
 from bounded_contexts.player.models import Player
+from bounded_contexts.user.models import User
 from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate, PlayerFilter
 from core.repo import BaseRepo
 from libs.datetime import utcnow
@@ -52,8 +53,8 @@ class PlayerWriteRepo(BaseRepo):
 class PlayerReadRepo(BaseRepo):
     def get_all(self, team_id: UUID) -> list[Player]:
         return self.session.exec(
-            select(Player)
-            .where(  # type: ignore
+            select(Player)  # type: ignore
+            .where(
                 Player.team_id == team_id,
                 Player.deleted == False,
             )
@@ -102,3 +103,10 @@ class PlayerReadRepo(BaseRepo):
                 query = query.order_by(field_to_order.asc())
 
         return self.session.exec(query).all()
+
+    def get_all_without_user(self, team_id: UUID) -> list[Player]:
+        return self.session.exec(  # type: ignore
+            select(Player)
+            .outerjoin(User, Player.id == User.player_id)
+            .where(Player.team_id == team_id, User.id.is_(None))
+        ).all()

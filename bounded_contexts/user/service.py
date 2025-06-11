@@ -9,6 +9,7 @@ from bounded_contexts.user.exceptions import (
     LoginUnauthorized,
     CantUpdateAdminUser,
     CantDeleteYourself,
+    PlayerAlreadyHasUser,
 )
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
@@ -35,6 +36,11 @@ def create_user(user_data: UserCreate, current_user: User, session: Session) -> 
 
     if not current_user.is_super_admin and user_data.is_super_admin:
         raise SuperAdminRequired()
+
+    if user_data.player_id and UserReadRepo(session=session).get_by_player_id(
+        current_user.team_id, user_data.player_id
+    ):
+        raise PlayerAlreadyHasUser()
 
     hashed_password = hash_password(user_data.password)
 

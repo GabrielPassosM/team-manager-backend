@@ -10,11 +10,14 @@ from core.services.password import verify_password
 client = TestClient(app)
 
 
-def test_create_user(mock_team):
+def test_create_user(mock_team, mock_player_gen):
+    player = mock_player_gen()
+
     data = {
         "name": "Lionel Messi",
         "email": f"{uuid4()}@fcb.com",
         "password": "world-champion",
+        "player_id": str(player.id),
     }
     response = client.post("/users", json=data)
     assert response.status_code == 201

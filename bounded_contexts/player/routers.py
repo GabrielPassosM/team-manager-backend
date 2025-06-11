@@ -9,6 +9,7 @@ from bounded_contexts.player.schemas import (
     PlayerCreate,
     PlayerUpdate,
     PlayerFilter,
+    PlayerWithoutUserResponse,
 )
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
@@ -39,7 +40,20 @@ async def get_players(
 ) -> list[PlayerResponse]:
     players = service.get_players_by_team(current_user.team_id, session)
 
-    return [PlayerResponse.model_validate(champ) for champ in players]
+    return [PlayerResponse.model_validate(player) for player in players]
+
+
+@router.get("/without-user", status_code=200)
+async def get_players_without_user(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[PlayerWithoutUserResponse]:
+    if not current_user.has_admin_privileges:
+        raise AdminRequired()
+
+    players = service.get_players_without_user(current_user.team_id, session)
+
+    return [PlayerWithoutUserResponse.model_validate(player) for player in players]
 
 
 @router.patch("/{player_id}", status_code=200)

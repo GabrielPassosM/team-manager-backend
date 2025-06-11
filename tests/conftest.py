@@ -144,6 +144,7 @@ def mock_user_gen(db_session, mock_team):
         team_id=None,
         is_admin=True,
         is_super_admin=False,
+        player_id: UUID | None = None,
     ):
         mock = User(
             team_id=team_id or mock_team.id,
@@ -152,6 +153,7 @@ def mock_user_gen(db_session, mock_team):
             hashed_password=hash_password(password),
             is_admin=is_admin,
             is_super_admin=is_super_admin,
+            player_id=player_id,
         )
         db_session.add(mock)
         db_session.commit()

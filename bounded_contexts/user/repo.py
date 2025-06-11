@@ -150,3 +150,12 @@ class UserReadRepo(BaseRepo):
                 User.deleted == False,
             )
         ).first()
+
+    def get_by_player_id(self, team_id: UUID, player_id: UUID) -> User | None:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.team_id == team_id,
+                User.player_id == player_id,
+                User.deleted == False,
+            )
+        ).first()

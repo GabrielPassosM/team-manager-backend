@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from bounded_contexts.player.models import PlayerPositions
-from bounded_contexts.player.schemas import PlayerResponse
+from bounded_contexts.player.schemas import PlayerResponse, PlayerWithoutUserResponse
 
 client = TestClient(app)
 
@@ -113,3 +113,18 @@ def test_filter_players(mock_player_gen):
     response_body = response.json()
     assert len(response_body) == 1
     assert response_body[0]["id"] == str(player2.id)
+
+
+def test_get_players_without_user(mock_player_gen, mock_user_gen):
+    player1 = mock_player_gen(name="Player A")
+    player2 = mock_player_gen(name="Player B")
+
+    mock_user_gen(player_id=player1.id)
+
+    response = client.get("/players/without-user")
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 1
+    assert response_body[0]["id"] == str(player2.id)
+    PlayerWithoutUserResponse.model_validate(response_body[0])
