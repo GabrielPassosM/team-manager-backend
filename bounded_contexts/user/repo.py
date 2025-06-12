@@ -26,14 +26,14 @@ class UserWriteRepo(BaseRepo):
         return user
 
     def update(
-        self, user: User, user_data: UserUpdate, current_user: User | UUID
+        self, user: User, update_data: UserUpdate, current_user: User | UUID
     ) -> User:
-        user_data = user_data.model_dump()
-        password = user_data.pop("password")
+        update_data = update_data.model_dump()
+        password = update_data.pop("password")
         if password:
-            user_data["hashed_password"] = hash_password(password)
+            update_data["hashed_password"] = hash_password(password)
 
-        for key, value in user_data.items():
+        for key, value in update_data.items():
             if key == "id":
                 continue
             setattr(user, key, value)

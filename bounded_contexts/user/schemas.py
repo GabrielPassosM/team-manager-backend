@@ -27,6 +27,7 @@ class UserUpdate(BaseModel):
     name: str
     email: str
     password: str | None = None
+    player_id: UUID | None = None
 
 
 class UserPlayer(BaseSchema):

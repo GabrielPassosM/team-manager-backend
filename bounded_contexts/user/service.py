@@ -48,44 +48,57 @@ def create_user(user_data: UserCreate, current_user: User, session: Session) -> 
 
 
 def update_user(
-    user_id: UUID, user_data: UserUpdate, session: Session, current_user: User
+    user_id: UUID, update_data: UserUpdate, session: Session, current_user: User
 ) -> User:
     user_to_update = UserReadRepo(session=session).get_by_id(user_id)
     if not user_to_update:
         raise UserNotFound()
 
-    _validate_update_request(current_user, user_to_update, user_data)
+    _validate_update_request(current_user, user_to_update, update_data)
 
-    if user_data.email != user_to_update.email and UserReadRepo(
+    if update_data.email != user_to_update.email and UserReadRepo(
         session=session
-    ).get_by_email(user_data.email):
+    ).get_by_email(update_data.email):
         raise EmailAlreadyInUse()
+
+    if (
+        update_data.player_id
+        and update_data.player_id != user_to_update.player_id
+        and UserReadRepo(session=session).get_by_player_id(
+            current_user.team_id, update_data.player_id
+        )
+    ):
+        raise PlayerAlreadyHasUser()
 
     if all(
         [
-            not user_data.password,
-            user_to_update.name == user_data.name,
-            user_to_update.email == user_data.email,
+            not update_data.password,
+            user_to_update.name == update_data.name,
+            user_to_update.email == update_data.email,
+            user_to_update.player_id == update_data.player_id,
         ]
     ):
         return user_to_update
 
     return UserWriteRepo(session=session).update(
-        user_to_update, user_data, current_user.id
+        user_to_update, update_data, current_user.id
     )
 
 
 def _validate_update_request(
-    current_user: User, user_to_update: User, user_data: UserUpdate
+    current_user: User, user_to_update: User, update_data: UserUpdate
 ) -> None:
     if user_to_update.email == DEMO_USER_EMAIL and not current_user.is_super_admin:
         raise CantUpdateDemoUser()
+
+    if update_data.player_id and not current_user.has_admin_privileges:
+        raise AdminRequired()
 
     if current_user.is_super_admin or current_user.id == user_to_update.id:
         return
 
     # Cannot update other users' passwords
-    if user_data.password:
+    if update_data.password:
         raise AdminRequired()
 
     # Cannot update other user if not admin

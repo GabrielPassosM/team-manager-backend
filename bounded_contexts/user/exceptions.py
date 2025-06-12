@@ -48,5 +48,5 @@ class CantDeleteYourself(HTTPException):
 
 @dataclass
 class PlayerAlreadyHasUser(HTTPException):
-    status_code = 403
-    detail = "Este jogador já possui um usuário vinculado. Qualquer dúvida, entre em contato com o suporte técnico."
+    status_code = 400
+    detail = "Este jogador já possui um usuário vinculado."

@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 
 from bounded_contexts.user.exceptions import CantUpdateAdminUser, CantDeleteYourself
@@ -76,6 +78,13 @@ class _UserTest:
             _UserTest(id=2, is_admin=True),
             UserUpdate(name="Test", email="teste@gmail"),
             CantUpdateAdminUser,
+        ),
+        # Non-admin trying to update player_id → should fail
+        (
+            _UserTest(id=1),
+            _UserTest(id=2),
+            UserUpdate(name="Test", email="teste@gmail", player_id=uuid4()),
+            AdminRequired,
         ),
     ],
 )
