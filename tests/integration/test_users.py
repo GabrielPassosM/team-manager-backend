@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from bounded_contexts.user.models import User
-from bounded_contexts.user.schemas import UserResponse, UserResponse
+from bounded_contexts.user.schemas import UserResponse, UserResponse, UserPlayer
 from core.services.password import verify_password
 
 client = TestClient(app)
@@ -22,6 +22,14 @@ def test_create_user(mock_team, mock_player_gen):
     response = client.post("/users", json=data)
     assert response.status_code == 201
     response_body = response.json()
+    assert response_body["id"] is not None
+    assert response_body["name"] == data["name"]
+    assert response_body["email"] == data["email"]
+    assert response_body["team_id"] == str(mock_team.id)
+    assert response_body["is_admin"] == False
+    assert response_body["is_super_admin"] == False
+    assert response_body["player"]["id"] == str(player.id)
+    UserPlayer.model_validate(response_body["player"])
     UserResponse.model_validate(response_body)
 
 

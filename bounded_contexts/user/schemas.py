@@ -29,6 +29,12 @@ class UserUpdate(BaseModel):
     password: str | None = None
 
 
+class UserPlayer(BaseSchema):
+    id: UUID
+    name: str
+    shirt_number: int | None = None
+
+
 class UserResponse(BaseSchema):
     id: UUID
     name: str
@@ -36,6 +42,7 @@ class UserResponse(BaseSchema):
     team_id: UUID
     is_admin: bool
     is_super_admin: bool
+    player: UserPlayer | None = None
 
 
 class LoginResponse(BaseModel):

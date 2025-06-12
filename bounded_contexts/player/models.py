@@ -1,9 +1,13 @@
 from enum import Enum
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from core.models.base import BaseTable
+
+if TYPE_CHECKING:
+    from bounded_contexts.user.models import User
 
 
 class PlayerPositions(str, Enum):
@@ -34,3 +38,5 @@ class Player(BaseTable, table=True):
     image_url: str | None = Field(nullable=True, default=None)
     shirt_number: int | None = Field(nullable=True, default=None)
     position: str  # PlayerPositions enum
+
+    user: Optional["User"] = Relationship(back_populates="player")

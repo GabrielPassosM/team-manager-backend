@@ -1,9 +1,13 @@
 from enum import Enum
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from core.models.base import BaseTable
+
+if TYPE_CHECKING:
+    from bounded_contexts.player.models import Player
 
 
 class User(BaseTable, table=True):
@@ -14,6 +18,8 @@ class User(BaseTable, table=True):
     hashed_password: str = Field(max_length=60)
     is_admin: bool = Field(default=False)
     is_super_admin: bool = Field(default=False)
+
+    player: Optional["Player"] = Relationship(back_populates="user")
 
     @property
     def has_admin_privileges(self) -> bool:
