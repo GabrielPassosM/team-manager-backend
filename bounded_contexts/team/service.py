@@ -10,7 +10,7 @@ from bounded_contexts.user.models import User
 
 
 def create_team(team_data: TeamCreate, session: Session) -> Team:
-    return TeamWriteRepo(session=session).save(team_data)
+    return TeamWriteRepo(session=session).create(team_data)
 
 
 def get_team_by_id(team_id: UUID, session: Session) -> Team:

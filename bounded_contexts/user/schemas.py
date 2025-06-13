@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     password: str
     is_admin: bool = False
     is_super_admin: bool = False
+    player_id: UUID | None = None
 
     @field_validator("password", mode="before")
     @classmethod
@@ -26,6 +27,13 @@ class UserUpdate(BaseModel):
     name: str
     email: str
     password: str | None = None
+    player_id: UUID | None = None
+
+
+class UserPlayer(BaseSchema):
+    id: UUID
+    name: str
+    shirt_number: int | None = None
 
 
 class UserResponse(BaseSchema):
@@ -35,6 +43,7 @@ class UserResponse(BaseSchema):
     team_id: UUID
     is_admin: bool
     is_super_admin: bool
+    player: UserPlayer | None = None
 
 
 class LoginResponse(BaseModel):

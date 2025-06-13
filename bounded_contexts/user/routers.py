@@ -122,11 +122,11 @@ async def get_user(user_id: UUID, session: Session = Depends(get_session)) -> Us
 @router.patch("/{user_id}", status_code=200)
 async def update_user(
     user_id: UUID,
-    user_data: UserUpdate,
+    update_data: UserUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> UserResponse:
-    user_updated = service.update_user(user_id, user_data, session, current_user)
+    user_updated = service.update_user(user_id, update_data, session, current_user)
 
     return UserResponse.model_validate(user_updated)
 

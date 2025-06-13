@@ -10,7 +10,7 @@ from libs.datetime import utcnow
 
 
 class UserWriteRepo(BaseRepo):
-    def save(
+    def create(
         self, user_data: UserCreate, current_user: User, hashed_password: str
     ) -> User:
         user_data = user_data.model_dump()
@@ -26,14 +26,14 @@ class UserWriteRepo(BaseRepo):
         return user
 
     def update(
-        self, user: User, user_data: UserUpdate, current_user: User | UUID
+        self, user: User, update_data: UserUpdate, current_user: User | UUID
     ) -> User:
-        user_data = user_data.model_dump()
-        password = user_data.pop("password")
+        update_data = update_data.model_dump()
+        password = update_data.pop("password")
         if password:
-            user_data["hashed_password"] = hash_password(password)
+            update_data["hashed_password"] = hash_password(password)
 
-        for key, value in user_data.items():
+        for key, value in update_data.items():
             if key == "id":
                 continue
             setattr(user, key, value)
@@ -47,6 +47,12 @@ class UserWriteRepo(BaseRepo):
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def save(self, user: User, current_user_id: UUID) -> None:
+        user.updated_at = utcnow()
+        user.updated_by = current_user_id
+        self.session.merge(user)
+        self.session.commit()
 
     def delete(self, user: User) -> None:
         # Hard delete to free the email for reuse (uniq in db)
@@ -147,6 +153,15 @@ class UserReadRepo(BaseRepo):
             select(User).where(  # type: ignore
                 User.team_id == team_id,
                 User.is_super_admin == True,
+                User.deleted == False,
+            )
+        ).first()
+
+    def get_by_player_id(self, team_id: UUID, player_id: UUID) -> User | None:
+        return self.session.exec(
+            select(User).where(  # type: ignore
+                User.team_id == team_id,
+                User.player_id == player_id,
                 User.deleted == False,
             )
         ).first()

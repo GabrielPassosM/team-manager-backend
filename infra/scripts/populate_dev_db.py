@@ -20,6 +20,7 @@ def _populate() -> None:
         return
 
     team1_id = uuid4()
+    player_id = uuid4()
     team1_mocks = [
         Team(
             id=team1_id,
@@ -27,26 +28,6 @@ def _populate() -> None:
             emblem_url="https://i.postimg.cc/2jKvC0WY/emblema-demo.png",
             foundation_date=date(2023, 1, 1),
             season_start_date=date(2023, 1, 1),
-        ),
-        User(
-            team_id=team1_id,
-            name="Usuário Demo",
-            email=DEMO_USER_EMAIL,
-            hashed_password=hash_password("gamalabs#demo"),
-            is_admin=True,
-        ),
-        User(
-            team_id=team1_id,
-            name="José da Silva",
-            email="josedasilva@demofc.com",
-            hashed_password=hash_password("1234"),
-        ),
-        User(
-            team_id=team1_id,
-            name="Super User",
-            email="superuser@demofc.com",
-            hashed_password=hash_password("1234"),
-            is_super_admin=True,
         ),
         Championship(
             team_id=team1_id,
@@ -69,6 +50,7 @@ def _populate() -> None:
             is_league_format=True,
         ),
         Player(
+            id=player_id,
             team_id=team1_id,
             name="Jose da Silva",
             shirt_number=5,
@@ -80,35 +62,37 @@ def _populate() -> None:
             shirt_number=13,
             position=PlayerPositions.ZAGUEIRO,
         ),
+        User(
+            team_id=team1_id,
+            name="Usuário Demo",
+            email=DEMO_USER_EMAIL,
+            hashed_password=hash_password("gamalabs#demo"),
+            is_admin=True,
+        ),
+        User(
+            team_id=team1_id,
+            player_id=player_id,
+            name="José da Silva",
+            email="josedasilva@demofc.com",
+            hashed_password=hash_password("1234"),
+        ),
+        User(
+            team_id=team1_id,
+            name="Super User",
+            email="superuser@demofc.com",
+            hashed_password=hash_password("1234"),
+            is_super_admin=True,
+        ),
     ]
 
     team2_id = uuid4()
+    player_id = uuid4()
     team2_mocks = [
         Team(
             id=team2_id,
             name="Tribunata",
             foundation_date=date(1899, 11, 29),
             season_start_date=date(2023, 1, 1),
-        ),
-        User(
-            team_id=team2_id,
-            name="Gabriel Martins",
-            email="gab@tribunata.com",
-            hashed_password=hash_password("1234"),
-            is_admin=True,
-        ),
-        User(
-            team_id=team2_id,
-            name="José da Silva",
-            email="josedasilva@tribunata.com",
-            hashed_password=hash_password("1234"),
-        ),
-        User(
-            team_id=team2_id,
-            name="Super User",
-            email="superuser@tribunata.com",
-            hashed_password=hash_password("1234"),
-            is_super_admin=True,
         ),
         Championship(
             team_id=team2_id,
@@ -131,6 +115,7 @@ def _populate() -> None:
             is_league_format=False,
         ),
         Player(
+            id=player_id,
             team_id=team2_id,
             name="Jose da Silva",
             shirt_number=8,
@@ -141,6 +126,27 @@ def _populate() -> None:
             name="Marcelo",
             shirt_number=1,
             position=PlayerPositions.GOLEIRO,
+        ),
+        User(
+            team_id=team2_id,
+            name="Gabriel Martins",
+            email="gab@tribunata.com",
+            hashed_password=hash_password("1234"),
+            is_admin=True,
+        ),
+        User(
+            team_id=team2_id,
+            player_id=player_id,
+            name="José da Silva",
+            email="josedasilva@tribunata.com",
+            hashed_password=hash_password("1234"),
+        ),
+        User(
+            team_id=team2_id,
+            name="Super User",
+            email="superuser@tribunata.com",
+            hashed_password=hash_password("1234"),
+            is_super_admin=True,
         ),
     ]
 

@@ -9,6 +9,7 @@ from bounded_contexts.player.schemas import (
     PlayerCreate,
     PlayerUpdate,
     PlayerFilter,
+    PlayerWithoutUserResponse,
 )
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
@@ -24,10 +25,6 @@ async def create_player(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> PlayerResponse:
-    # TODO or current_user DOES NOT have a linked player yet
-    if not current_user.has_admin_privileges:
-        raise AdminRequired()
-
     player = service.create_player(create_data, current_user, session)
     return PlayerResponse.model_validate(player)
 
@@ -37,9 +34,26 @@ async def get_players(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> list[PlayerResponse]:
-    players = service.get_players_by_team(current_user.team_id, session)
+    players = service.get_players_by_team(
+        current_user.team_id, current_user.player_id, session
+    )
+    if current_user.player:
+        players.insert(0, current_user.player)
 
-    return [PlayerResponse.model_validate(champ) for champ in players]
+    return [PlayerResponse.model_validate(player) for player in players]
+
+
+@router.get("/without-user", status_code=200)
+async def get_players_without_user(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[PlayerWithoutUserResponse]:
+    if not current_user.has_admin_privileges:
+        raise AdminRequired()
+
+    players = service.get_players_without_user(current_user.team_id, session)
+
+    return [PlayerWithoutUserResponse.model_validate(player) for player in players]
 
 
 @router.patch("/{player_id}", status_code=200)
@@ -49,12 +63,10 @@ async def update_player(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> PlayerResponse:
-    # TODO or current_user linked to player
-    if not current_user.has_admin_privileges:
-        raise AdminRequired()
-
-    player = service.update_player(player_id, update_data, session, current_user.id)
-    return PlayerResponse.model_validate(player)
+    player_updated = service.update_player(
+        player_id, update_data, session, current_user
+    )
+    return PlayerResponse.model_validate(player_updated)
 
 
 @router.delete("/{player_id}", status_code=204)
@@ -63,11 +75,7 @@ async def delete_player(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ):
-    # TODO or current_user linked to player
-    if not current_user.has_admin_privileges:
-        raise AdminRequired()
-
-    service.delete_player(player_id, session, current_user.id)
+    service.delete_player(player_id, session, current_user)
 
 
 @router.post("/filter", status_code=200)

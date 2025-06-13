@@ -44,3 +44,9 @@ class CantDeleteAdminUser(HTTPException):
 class CantDeleteYourself(HTTPException):
     status_code = 403
     detail = "Não é permitido remover seu próprio usuário. Qualquer dúvida, entre em contato com o suporte técnico."
+
+
+@dataclass
+class PlayerAlreadyHasUser(HTTPException):
+    status_code = 400
+    detail = "Este jogador já possui um usuário vinculado."

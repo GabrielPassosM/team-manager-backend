@@ -4,21 +4,32 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from bounded_contexts.user.models import User
-from bounded_contexts.user.schemas import UserResponse, UserResponse
+from bounded_contexts.user.schemas import UserResponse, UserResponse, UserPlayer
 from core.services.password import verify_password
 
 client = TestClient(app)
 
 
-def test_create_user(mock_team):
+def test_create_user(mock_team, mock_player_gen):
+    player = mock_player_gen()
+
     data = {
         "name": "Lionel Messi",
         "email": f"{uuid4()}@fcb.com",
         "password": "world-champion",
+        "player_id": str(player.id),
     }
     response = client.post("/users", json=data)
     assert response.status_code == 201
     response_body = response.json()
+    assert response_body["id"] is not None
+    assert response_body["name"] == data["name"]
+    assert response_body["email"] == data["email"]
+    assert response_body["team_id"] == str(mock_team.id)
+    assert response_body["is_admin"] == False
+    assert response_body["is_super_admin"] == False
+    assert response_body["player"]["id"] == str(player.id)
+    UserPlayer.model_validate(response_body["player"])
     UserResponse.model_validate(response_body)
 
 
@@ -160,13 +171,15 @@ def test_get_users_by_permission_type(mock_user_gen):
     UserResponse.model_validate(response_body2[0])
 
 
-def test_update_user_success(mock_user):
+def test_update_user_success(mock_user, mock_player_gen):
     user_before_update = mock_user
+    player = mock_player_gen()
 
     data = {
         "name": "Lionel Messi",
         "email": f"{uuid4()}@fcb.com",
         "password": "world-champion",
+        "player_id": str(player.id),
     }
     response = client.patch(f"/users/{str(user_before_update.id)}", json=data)
     assert response.status_code == 200
@@ -176,6 +189,7 @@ def test_update_user_success(mock_user):
     assert response_body["email"] == data["email"]
     assert response_body["is_admin"] == user_before_update.is_admin
     assert response_body["is_super_admin"] == user_before_update.is_super_admin
+    assert response_body["player"]["id"] == str(player.id)
     assert not verify_password(data["password"], user_before_update.hashed_password)
 
 
@@ -194,6 +208,24 @@ def test_error_update_user_with_same_email(mock_user_gen):
         response.json()["detail"]
         == "Já existe um usuário com este e-mail cadastrado no sistema"
     )
+
+
+def test_error_update_user_with_player_already_associated(
+    mock_user_gen, mock_player_gen
+):
+    player = mock_player_gen()
+    user1 = mock_user_gen(player_id=player.id)
+    user2 = mock_user_gen()
+
+    data = {
+        "name": "Luis Suárez",
+        "email": f"{uuid4()}@fcb.com",
+        "password": "password123",
+        "player_id": str(player.id),  # Trying to associate the same player
+    }
+    response = client.patch(f"/users/{str(user2.id)}", json=data)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Este jogador já possui um usuário vinculado."
 
 
 def test_delete_user(mock_user_gen):

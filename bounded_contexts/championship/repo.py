@@ -21,7 +21,7 @@ from libs.datetime import brasilia_now, utcnow
 
 
 class ChampionshipWriteRepo(BaseRepo):
-    def save(
+    def create(
         self, create_data: ChampionshipCreate, team_id: UUID, current_user_id: UUID
     ) -> Championship:
         create_data = create_data.model_dump()
