@@ -39,7 +39,7 @@ def register_new_team_and_create_base_models(
             primary_color=register_data.primary_color,
             paid_until=register_data.paid_until,
         )
-        team_created = TeamWriteRepo(session=session).save(team_data)
+        team_created = TeamWriteRepo(session=session).create(team_data)
 
     if not team_created:
         raise HTTPException(

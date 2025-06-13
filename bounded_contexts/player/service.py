@@ -23,7 +23,7 @@ def create_player(
     if not TeamReadRepo(session=session).get_by_id(current_user.team_id):
         raise TeamNotFound()
 
-    player = PlayerWriteRepo(session=session).save(
+    player = PlayerWriteRepo(session=session).create(
         create_data, current_user.team_id, current_user.id
     )
     if not current_user.has_admin_privileges:

@@ -10,7 +10,7 @@ from libs.datetime import utcnow
 
 
 class PlayerWriteRepo(BaseRepo):
-    def save(
+    def create(
         self, create_data: PlayerCreate, team_id: UUID, current_user_id: UUID
     ) -> Player:
         create_data = create_data.model_dump()

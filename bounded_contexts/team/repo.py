@@ -10,7 +10,7 @@ from libs.datetime import utcnow
 
 
 class TeamWriteRepo(BaseRepo):
-    def save(self, team_data: TeamCreate) -> Team:
+    def create(self, team_data: TeamCreate) -> Team:
         team = Team(**team_data.model_dump())
         self.session.add(team)
         self.session.commit()

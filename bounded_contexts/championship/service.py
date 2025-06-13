@@ -35,7 +35,7 @@ def create_championship(
     ):
         raise ChampionshipAlreadyExists()
 
-    return ChampionshipWriteRepo(session=session).save(
+    return ChampionshipWriteRepo(session=session).create(
         create_data, current_user.team_id, current_user.id
     )
 
