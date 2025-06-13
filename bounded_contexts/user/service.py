@@ -44,7 +44,9 @@ def create_user(user_data: UserCreate, current_user: User, session: Session) -> 
 
     hashed_password = hash_password(user_data.password)
 
-    return UserWriteRepo(session=session).save(user_data, current_user, hashed_password)
+    return UserWriteRepo(session=session).create(
+        user_data, current_user, hashed_password
+    )
 
 
 def update_user(

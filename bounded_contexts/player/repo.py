@@ -42,24 +42,32 @@ class PlayerWriteRepo(BaseRepo):
         self.session.refresh(player)
         return player
 
-    def delete(self, player: Player, current_user_id: UUID) -> None:
+    def delete(self, player: Player, current_user: User) -> None:
         player.deleted = True
         player.updated_at = utcnow()
-        player.updated_by = current_user_id
+        player.updated_by = current_user.id
         self.session.merge(player)
+
+        if current_user.player_id == player.id:
+            current_user.player_id = None
+            self.session.merge(current_user)
+
         self.session.commit()
 
 
 class PlayerReadRepo(BaseRepo):
-    def get_all(self, team_id: UUID) -> list[Player]:
-        return self.session.exec(
-            select(Player)  # type: ignore
-            .where(
-                Player.team_id == team_id,
-                Player.deleted == False,
-            )
-            .order_by(Player.name)
-        ).all()
+    def get_all_excluding_current_player(
+        self, team_id: UUID, current_player_id: UUID | None
+    ) -> list[Player]:
+        query = select(Player).where(
+            Player.team_id == team_id,
+            Player.deleted == False,
+        )
+        if current_player_id:
+            query = query.where(Player.id != current_player_id)
+        query = query.order_by(Player.name)
+
+        return self.session.exec(query).all()
 
     def get_by_id(self, player_id: UUID) -> Player | None:
         return self.session.exec(
@@ -108,5 +116,7 @@ class PlayerReadRepo(BaseRepo):
         return self.session.exec(  # type: ignore
             select(Player)
             .outerjoin(User, Player.id == User.player_id)
-            .where(Player.team_id == team_id, User.id.is_(None))
+            .where(
+                Player.team_id == team_id, Player.deleted == False, User.id.is_(None)
+            )
         ).all()

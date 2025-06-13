@@ -10,7 +10,7 @@ from libs.datetime import utcnow
 
 
 class UserWriteRepo(BaseRepo):
-    def save(
+    def create(
         self, user_data: UserCreate, current_user: User, hashed_password: str
     ) -> User:
         user_data = user_data.model_dump()
@@ -47,6 +47,12 @@ class UserWriteRepo(BaseRepo):
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def save(self, user: User, current_user_id: UUID) -> None:
+        user.updated_at = utcnow()
+        user.updated_by = current_user_id
+        self.session.merge(user)
+        self.session.commit()
 
     def delete(self, user: User) -> None:
         # Hard delete to free the email for reuse (uniq in db)

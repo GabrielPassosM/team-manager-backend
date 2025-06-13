@@ -58,6 +58,7 @@ class _FakeUserForTokenValidation:
     hashed_password: str = hash_password("1234")
     is_admin: bool = True
     is_super_admin: bool = False
+    player_id: UUID | None = None
 
 
 _fake_user = _FakeUserForTokenValidation()
@@ -165,6 +166,7 @@ def mock_user_gen(db_session, mock_team):
         _fake_user.is_admin = mock.is_admin
         _fake_user.is_super_admin = mock.is_super_admin
         _fake_user.team_id = mock.team_id
+        _fake_user.player_id = mock.player_id
 
         return mock
 
@@ -293,4 +295,5 @@ def _validate_user_token_testing() -> User:
         hashed_password=_fake_user.hashed_password,
         is_admin=_fake_user.is_admin,
         is_super_admin=_fake_user.is_super_admin,
+        player_id=_fake_user.player_id,
     )

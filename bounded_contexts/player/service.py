@@ -10,26 +10,43 @@ from bounded_contexts.storage.service import delete_player_image_from_bucket
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
+from bounded_contexts.user.repo import UserWriteRepo
+from core.exceptions import AdminRequired
 
 
 def create_player(
     create_data: PlayerCreate, current_user: User, session: Session
 ) -> Player:
+    if not current_user.has_admin_privileges and current_user.player_id:
+        raise AdminRequired()
+
     if not TeamReadRepo(session=session).get_by_id(current_user.team_id):
         raise TeamNotFound()
 
-    return PlayerWriteRepo(session=session).save(
+    player = PlayerWriteRepo(session=session).save(
         create_data, current_user.team_id, current_user.id
+    )
+    if not current_user.has_admin_privileges:
+        current_user.player_id = player.id
+        UserWriteRepo(session).save(current_user, current_user.id)
+
+    return player
+
+
+def get_players_by_team(
+    team_id: UUID, current_player_id: UUID | None, session: Session
+) -> list[Player]:
+    return PlayerReadRepo(session=session).get_all_excluding_current_player(
+        team_id, current_player_id
     )
 
 
-def get_players_by_team(team_id: UUID, session: Session) -> list[Player]:
-    return PlayerReadRepo(session=session).get_all(team_id)
-
-
 def update_player(
-    player_id: UUID, update_data: PlayerUpdate, session: Session, current_user_id: UUID
+    player_id: UUID, update_data: PlayerUpdate, session: Session, current_user: User
 ) -> Player:
+    if not current_user.has_admin_privileges and current_user.player_id != player_id:
+        raise AdminRequired()
+
     player_to_update = PlayerReadRepo(session=session).get_by_id(player_id)
     if not player_to_update:
         raise PlayerNotFound()
@@ -38,11 +55,14 @@ def update_player(
         return player_to_update
 
     return PlayerWriteRepo(session=session).update(
-        player_to_update, update_data, current_user_id
+        player_to_update, update_data, current_user.id
     )
 
 
-def delete_player(player_id: UUID, session: Session, current_user_id: UUID) -> None:
+def delete_player(player_id: UUID, session: Session, current_user: User) -> None:
+    if not current_user.has_admin_privileges and current_user.player_id != player_id:
+        raise AdminRequired()
+
     player_to_delete = PlayerReadRepo(session=session).get_by_id(player_id)
     if not player_to_delete:
         raise PlayerNotFound()
@@ -50,7 +70,7 @@ def delete_player(player_id: UUID, session: Session, current_user_id: UUID) -> N
     if player_to_delete.image_url:
         delete_player_image_from_bucket(player_to_delete.image_url)
 
-    PlayerWriteRepo(session=session).delete(player_to_delete, current_user_id)
+    PlayerWriteRepo(session=session).delete(player_to_delete, current_user)
 
 
 def filter_players(

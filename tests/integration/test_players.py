@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 
 from api.main import app
@@ -9,7 +11,7 @@ client = TestClient(app)
 
 def test_create_player(mock_user):
     data = {
-        "name": "Copa do Mundo",
+        "name": "Ronaldinho",
         "image_url": "https://example.com/image.jpg",
         "shirt_number": 11,
         "position": PlayerPositions.FIXO,
@@ -25,6 +27,32 @@ def test_create_player(mock_user):
     assert response_body["shirt_number"] == data["shirt_number"]
     assert response_body["position"] == data["position"]
     PlayerResponse.model_validate(response_body)
+
+
+def test_create_player_for_non_admin_user(mock_user_gen):
+    # 1 - Non-admin user without player can create a player
+    mock_user_gen(is_admin=False)
+    data = {
+        "name": "Iniesta",
+        "shirt_number": 8,
+        "position": PlayerPositions.MEIO_CAMPO,
+    }
+    response = client.post("/players", json=data)
+    assert response.status_code == 201
+
+    # 2 - Non-admin user with player cannot create another player
+    mock_user_gen(is_admin=False, player_id=uuid4())
+    data = {
+        "name": "Xavi",
+        "shirt_number": 6,
+        "position": PlayerPositions.MEIO_CAMPO,
+    }
+    response = client.post("/players", json=data)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Usuário não possui permissão para essa ação."
+
+    # clean current_user for next tests
+    mock_user_gen()
 
 
 def test_get_players(mock_player_gen):
@@ -67,9 +95,52 @@ def test_update_player(mock_player):
     PlayerResponse.model_validate(response_body)
 
 
+def test_non_admin_user_update_player(mock_player_gen, mock_user_gen):
+    # 1 - Non-admin user can update their own player
+    player = mock_player_gen()
+    mock_user_gen(is_admin=False, player_id=player.id)
+
+    update_data = {
+        "name": "Updated Player A",
+        "shirt_number": 10,
+        "image_url": "updated_image_url.jpg",
+        "position": PlayerPositions.FIXO,
+    }
+
+    response = client.patch(f"/players/{str(player.id)}", json=update_data)
+    assert response.status_code == 200
+
+    # 2 - Non-admin user cannot update another player's data
+    mock_user_gen(is_admin=False)
+    response = client.patch(f"/players/{str(player.id)}", json=update_data)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Usuário não possui permissão para essa ação."
+
+    # clean current_user for next tests
+    mock_user_gen()
+
+
 def test_delete_player(mock_player):
     response = client.delete(f"/players/{str(mock_player.id)}")
     assert response.status_code == 204
+
+
+def test_non_admin_user_delete_player(mock_player_gen, mock_user_gen):
+    # 1 - Non-admin user can delete their own player
+    player = mock_player_gen()
+    mock_user_gen(is_admin=False, player_id=player.id)
+
+    response = client.delete(f"/players/{str(player.id)}")
+    assert response.status_code == 204
+
+    # 2 - Non-admin user cannot delete another player's data
+    mock_user_gen(is_admin=False)
+    response = client.delete(f"/players/{str(player.id)}")
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Usuário não possui permissão para essa ação."
+
+    # clean current_user for next tests
+    mock_user_gen()
 
 
 def test_filter_players(mock_player_gen):
