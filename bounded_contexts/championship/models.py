@@ -1,29 +1,22 @@
 from datetime import date
 from enum import Enum
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from core.models.base import BaseTable
+from libs.base_types.interval import Interval
 from libs.datetime import brasilia_now
+
+if TYPE_CHECKING:
+    from bounded_contexts.game_and_stats.models import Game
 
 
 class ChampionshipStatus(str, Enum):
     NAO_INICIADO = "não iniciado"
     EM_ANDAMENTO = "em andamento"
     FINALIZADO = "finalizado"
-
-
-class FinalStageOptions(str, Enum):
-    FASE_DE_GRUPOS = "fase_de_grupos"
-    TRIANGULAR = "triangular"
-    REPESCAGEM = "repescagem"
-    DECIMA_SEXTAS_DE_FINAL = "decima_sextas_de_final"
-    OITAVAS_DE_FINAL = "oitavas_de_final"
-    QUARTAS_DE_FINAL = "quartas_de_final"
-    SEMI_FINAL = "semi_final"
-    VICE_CAMPEAO = "vice_campeao"
-    CAMPEAO = "campeao"
 
 
 class ChampionshipFormats(str, Enum):
@@ -39,12 +32,15 @@ class Championship(BaseTable, table=True):
 
     is_league_format: bool = Field(index=True)
 
-    # is_league_format == False
+    # when NOT is_league_format
     final_stage: str | None = Field(
         nullable=True, default=None, max_length=100
-    )  # FinalStageOptions
-    # is_league_format == True
+    )  # StageOptions
+    # when is_league_format
     final_position: int | None = Field(nullable=True, default=None, ge=1, le=200)
+
+    # Only so the backwards relation works (game -> champ)
+    game: Optional["Game"] = Relationship(back_populates="championship")
 
     @property
     def status(self) -> ChampionshipStatus:
@@ -55,3 +51,13 @@ class Championship(BaseTable, table=True):
             return ChampionshipStatus.FINALIZADO
         else:
             return ChampionshipStatus.EM_ANDAMENTO
+
+    @property
+    def date_range(self) -> tuple[date, date | None]:
+        return self.start_date, self.end_date
+
+    def date_is_within_championship(self, date_to_check: date) -> bool:
+        return Interval(
+            start=self.start_date,
+            end=self.end_date,
+        ).date_is_in_interval(date_to_check)

@@ -4,7 +4,11 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from bounded_contexts.player.models import PlayerPositions
-from bounded_contexts.player.schemas import PlayerResponse, PlayerWithoutUserResponse
+from bounded_contexts.player.schemas import (
+    PlayerResponse,
+    PlayerWithoutUserResponse,
+    PlayerNameAndShirt,
+)
 
 client = TestClient(app)
 
@@ -199,3 +203,16 @@ def test_get_players_without_user(mock_player_gen, mock_user_gen):
     assert len(response_body) == 1
     assert response_body[0]["id"] == str(player2.id)
     PlayerWithoutUserResponse.model_validate(response_body[0])
+
+
+def test_get_players_name_and_shirt(mock_player_gen, mock_user):
+    player1 = mock_player_gen(name="Player B", shirt_number=10)
+    player2 = mock_player_gen(name="Player A", shirt_number=11)
+
+    response = client.get("/players/all-name-and-shirt")
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert response_body[0]["id"] == str(player2.id)
+    PlayerNameAndShirt.model_validate(response_body[0])
