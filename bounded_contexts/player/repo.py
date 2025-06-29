@@ -4,7 +4,12 @@ from sqlmodel import select
 
 from bounded_contexts.player.models import Player
 from bounded_contexts.user.models import User
-from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate, PlayerFilter
+from bounded_contexts.player.schemas import (
+    PlayerCreate,
+    PlayerUpdate,
+    PlayerFilter,
+    PlayerNameAndShirt,
+)
 from core.repo import BaseRepo
 from libs.datetime import utcnow
 
@@ -77,6 +82,14 @@ class PlayerReadRepo(BaseRepo):
             )
         ).first()
 
+    def get_by_ids(self, player_ids: list[UUID]) -> list[Player] | None:
+        return self.session.exec(
+            select(Player).where(  # type: ignore
+                Player.id.in_(player_ids),
+                Player.deleted == False,
+            )
+        ).all()
+
     def get_by_filters(self, team_id: UUID, filter_data: PlayerFilter) -> list[Player]:
         query = select(Player).where(
             Player.team_id == team_id,
@@ -120,3 +133,17 @@ class PlayerReadRepo(BaseRepo):
                 Player.team_id == team_id, Player.deleted == False, User.id.is_(None)
             )
         ).all()
+
+    def get_all_players_only_name_and_shirt(
+        self, team_id: UUID
+    ) -> list[PlayerNameAndShirt]:
+        result = (
+            self.session.exec(
+                select(Player.id, Player.name, Player.shirt_number)  # type: ignore
+                .where(Player.team_id == team_id, Player.deleted == False)
+                .order_by(Player.name.asc())
+            )
+            .mappings()
+            .all()
+        )
+        return [PlayerNameAndShirt.model_validate(p) for p in result]

@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from api.htmls.index_html import INDEX_HTML
-from bounded_contexts.user.models import User
 from core import settings
 from api.admin import router as admin_router
 from api.healthcheck import router as healthcheck_router
@@ -15,6 +14,8 @@ from bounded_contexts.user.routers import router as user_router
 from bounded_contexts.storage.routers import router as storage_router
 from bounded_contexts.championship.routers import router as championship_router
 from bounded_contexts.player.routers import router as player_router
+from bounded_contexts.game_and_stats.game.routers import router as game_router
+from bounded_contexts.game_and_stats.stats.routers import router as stats_router
 from infra.logger import configure_logger
 
 security = HTTPBasic()
@@ -47,6 +48,8 @@ app.include_router(storage_router)
 app.include_router(healthcheck_router)
 app.include_router(championship_router)
 app.include_router(player_router)
+app.include_router(game_router)
+app.include_router(stats_router)
 
 
 @app.exception_handler(Exception)

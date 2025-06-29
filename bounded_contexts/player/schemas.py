@@ -13,7 +13,7 @@ class PlayerResponse(BaseSchema):
     shirt_number: int | None = None
     position: PlayerPositions
 
-    # From PlayerStatLog
+    # From GameStatsResponse
     goals: int = 0
     assists: int = 0
     yellow_cards: int = 0
@@ -61,7 +61,16 @@ class PlayerFilter(BaseModel):
         return v
 
 
-class PlayerWithoutUserResponse(BaseSchema):
+class PlayerNameAndShirt(BaseSchema):
     id: UUID
     name: str
     shirt_number: int | None = None
+
+    @field_validator("name")
+    @classmethod
+    def name_max_size(cls, v):
+        return v[:25]
+
+
+class PlayerWithoutUserResponse(PlayerNameAndShirt):
+    pass

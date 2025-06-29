@@ -3,7 +3,15 @@ from uuid import uuid4
 
 from sqlmodel import select
 
-from bounded_contexts.championship.models import Championship, FinalStageOptions
+from bounded_contexts.championship.models import Championship
+from bounded_contexts.game_and_stats.models import (
+    Game,
+    GamePlayerAvailability,
+    AvailabilityStatus,
+    GamePlayerStat,
+    StatOptions,
+)
+from core.enums import StageOptions
 from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
@@ -20,7 +28,13 @@ def _populate() -> None:
         return
 
     team1_id = uuid4()
-    player_id = uuid4()
+    player1_id = uuid4()
+    player2_id = uuid4()
+    champ1_id = uuid4()
+    champ2_id = uuid4()
+    game1_id = uuid4()
+    game2_id = uuid4()
+    goal1_id = uuid4()
     team1_mocks = [
         Team(
             id=team1_id,
@@ -30,18 +44,20 @@ def _populate() -> None:
             season_start_date=date(2023, 1, 1),
         ),
         Championship(
+            id=champ1_id,
             team_id=team1_id,
             name=FRIENDLY_CHAMPIONSHIP_NAME,
             start_date=date(1800, 1, 1),
             is_league_format=True,
         ),
         Championship(
+            id=champ2_id,
             team_id=team1_id,
             name="Champions League 2024",
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 30),
             is_league_format=False,
-            final_stage=FinalStageOptions.SEMI_FINAL,
+            final_stage=StageOptions.SEMI_FINAL,
         ),
         Championship(
             team_id=team1_id,
@@ -50,13 +66,14 @@ def _populate() -> None:
             is_league_format=True,
         ),
         Player(
-            id=player_id,
+            id=player1_id,
             team_id=team1_id,
             name="Jose da Silva",
             shirt_number=5,
             position=PlayerPositions.VOLANTE,
         ),
         Player(
+            id=player2_id,
             team_id=team1_id,
             name="Roberto Carlos",
             shirt_number=13,
@@ -71,7 +88,7 @@ def _populate() -> None:
         ),
         User(
             team_id=team1_id,
-            player_id=player_id,
+            player_id=player1_id,
             name="José da Silva",
             email="josedasilva@demofc.com",
             hashed_password=hash_password("1234"),
@@ -82,6 +99,146 @@ def _populate() -> None:
             email="superuser@demofc.com",
             hashed_password=hash_password("1234"),
             is_super_admin=True,
+        ),
+        Game(
+            id=game1_id,
+            team_id=team1_id,
+            championship_id=champ1_id,
+            adversary="Bayern Munich FC",
+            date_hour=date(2024, 5, 1),
+            round=2,
+            team_score=3,
+            adversary_score=1,
+        ),
+        GamePlayerAvailability(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player1_id,
+            status=AvailabilityStatus.IN,
+        ),
+        GamePlayerAvailability(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player2_id,
+            status=AvailabilityStatus.DOUBT,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player1_id,
+            stat=StatOptions.PLAYED,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player2_id,
+            stat=StatOptions.PLAYED,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            id=goal1_id,
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player1_id,
+            stat=StatOptions.GOAL,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player2_id,
+            related_stat_id=goal1_id,
+            stat=StatOptions.ASSIST,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player2_id,
+            stat=StatOptions.GOAL,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player2_id,
+            stat=StatOptions.GOAL,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player2_id,
+            stat=StatOptions.YELLOW_CARD,
+            quantity=2,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player1_id,
+            stat=StatOptions.MVP,
+            quantity=2,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game1_id,
+            player_id=player2_id,
+            stat=StatOptions.MVP,
+            quantity=3,
+        ),
+        Game(
+            id=game2_id,
+            team_id=team1_id,
+            championship_id=champ2_id,
+            adversary="Arsenal",
+            date_hour=date(2024, 2, 10),
+            stage=StageOptions.SEMI_FINAL,
+            is_home=False,
+            team_score=2,
+            adversary_score=2,
+            team_penalty_score=4,
+            adversary_penalty_score=5,
+        ),
+        GamePlayerAvailability(
+            team_id=team1_id,
+            game_id=game2_id,
+            player_id=player1_id,
+            status=AvailabilityStatus.IN,
+        ),
+        GamePlayerAvailability(
+            team_id=team1_id,
+            game_id=game2_id,
+            player_id=player2_id,
+            status=AvailabilityStatus.OUT,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game2_id,
+            player_id=player1_id,
+            stat=StatOptions.PLAYED,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game2_id,
+            player_id=player1_id,
+            stat=StatOptions.GOAL,
+            quantity=2,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game2_id,
+            player_id=player1_id,
+            stat=StatOptions.RED_CARD,
+            quantity=1,
+        ),
+        GamePlayerStat(
+            team_id=team1_id,
+            game_id=game2_id,
+            player_id=player2_id,
+            stat=StatOptions.MVP,
+            quantity=2,
         ),
     ]
 
@@ -106,7 +263,7 @@ def _populate() -> None:
             start_date=date(2024, 1, 1),
             end_date=date(2024, 6, 30),
             is_league_format=False,
-            final_stage=FinalStageOptions.CAMPEAO,
+            final_stage=StageOptions.CAMPEAO,
         ),
         Championship(
             team_id=team2_id,
@@ -155,8 +312,7 @@ def _populate() -> None:
     for team_mocks in teams_mocks:
         for mock in team_mocks:
             session.add(mock)
-            if isinstance(mock, Team):
-                session.flush()
+            session.flush()
     session.commit()
     session.close()
 

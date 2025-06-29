@@ -6,10 +6,10 @@ import time_machine
 
 from api.main import app
 from bounded_contexts.championship.models import (
-    FinalStageOptions,
     ChampionshipStatus,
     ChampionshipFormats,
 )
+from core.enums import StageOptions
 from bounded_contexts.championship.schemas import ChampionshipResponse
 from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 
@@ -23,7 +23,7 @@ def test_create_championship(mock_user):
         "start_date": "2022-11-20",
         "end_date": "2022-12-18",
         "is_league_format": False,
-        "final_stage": FinalStageOptions.CAMPEAO,
+        "final_stage": StageOptions.CAMPEAO,
     }
 
     response = client.post("/championships", json=data)
@@ -60,7 +60,7 @@ def test_get_championships(mock_championship_gen):
         name=name_finished_champ,
         start_date=date(2023, 12, 15),
         end_date=date(2024, 1, 15),
-        final_stage=FinalStageOptions.QUARTAS_DE_FINAL,
+        final_stage=StageOptions.QUARTAS_DE_FINAL,
     )
     name_upcoming_champ = f"Upcoming {uuid4()}"
     mock_championship_gen(
@@ -175,7 +175,7 @@ def test_filter_championships(clean_db, mock_championship_gen):
         name="2champ2",
         start_date=date(2023, 12, 15),
         end_date=date(2024, 1, 15),
-        final_stage=FinalStageOptions.QUARTAS_DE_FINAL,
+        final_stage=StageOptions.QUARTAS_DE_FINAL,
     )
     champ3 = mock_championship_gen(
         start_date=date(2024, 1, 15),
@@ -225,7 +225,7 @@ def test_filter_championships(clean_db, mock_championship_gen):
     assert response_body[0]["id"] == str(champ3.id)
 
     data["format"] = ChampionshipFormats.KNOCKOUT
-    data["final_stages"] = [FinalStageOptions.QUARTAS_DE_FINAL]
+    data["final_stages"] = [StageOptions.QUARTAS_DE_FINAL]
     response = client.post("/championships/filter", json=data)
     response_body = response.json()
     assert len(response_body) == 1

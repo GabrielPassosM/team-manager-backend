@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from random import randint
 from uuid import uuid4, UUID
 
@@ -7,7 +7,9 @@ import pytest
 from sqlmodel import select
 
 from api.main import app
-from bounded_contexts.championship.models import Championship, FinalStageOptions
+from bounded_contexts.championship.models import Championship
+from bounded_contexts.game_and_stats.models import Game, GamePlayerStat, StatOptions
+from core.enums import StageOptions
 from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
@@ -181,7 +183,7 @@ def mock_championship(db_session, mock_team):
         start_date=date(2022, 11, 20),
         end_date=date(2022, 12, 18),
         is_league_format=False,
-        final_stage=FinalStageOptions.CAMPEAO,
+        final_stage=StageOptions.CAMPEAO,
     )
     db_session.add(mock)
     db_session.commit()
@@ -198,7 +200,7 @@ def mock_championship_gen(db_session, mock_team):
         start_date: date = date(2022, 11, 20),
         end_date: date = None,
         is_league_format: bool = False,
-        final_stage: FinalStageOptions | None = None,
+        final_stage: StageOptions | None = None,
         final_position: int | None = None,
     ):
         mock = Championship(
@@ -237,7 +239,7 @@ def mock_friendly_championship(db_session, mock_team):
         start_date=date(2022, 11, 20),
         end_date=date(2022, 12, 18),
         is_league_format=False,
-        final_stage=FinalStageOptions.CAMPEAO,
+        final_stage=StageOptions.CAMPEAO,
     )
     db_session.add(mock)
     db_session.commit()
@@ -284,6 +286,39 @@ def mock_player_gen(db_session, mock_team):
         return mock
 
     yield _make_mock
+
+
+@pytest.fixture(scope="function")
+def mock_game(db_session, mock_team, mock_championship):
+    mock = Game(
+        team_id=mock_team.id,
+        championship_id=mock_championship.id,
+        adversary=f"{uuid4()} FC",
+        date_hour=datetime(2022, 11, 22, 19, 30),
+        stage=StageOptions.FINAL,
+        team_score=1,
+        adversary_score=0,
+    )
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
+
+    yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_game_player_stat(db_session, mock_team, mock_game):
+    mock = GamePlayerStat(
+        team_id=mock_team.id,
+        game_id=mock_game.id,
+        stat=StatOptions.GOAL,
+        quantity=1,
+    )
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
+
+    yield mock
 
 
 def _validate_user_token_testing() -> User:

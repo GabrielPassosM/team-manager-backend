@@ -5,7 +5,12 @@ from sqlmodel import Session
 from bounded_contexts.player.exceptions import PlayerNotFound
 from bounded_contexts.player.models import Player
 from bounded_contexts.player.repo import PlayerReadRepo, PlayerWriteRepo
-from bounded_contexts.player.schemas import PlayerCreate, PlayerUpdate, PlayerFilter
+from bounded_contexts.player.schemas import (
+    PlayerCreate,
+    PlayerUpdate,
+    PlayerFilter,
+    PlayerNameAndShirt,
+)
 from bounded_contexts.storage.service import delete_player_image_from_bucket
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
@@ -34,7 +39,7 @@ def create_player(
 
 
 def get_players_by_team(
-    team_id: UUID, current_player_id: UUID | None, session: Session
+    team_id: UUID, session: Session, current_player_id: UUID | None = None
 ) -> list[Player]:
     return PlayerReadRepo(session=session).get_all_excluding_current_player(
         team_id, current_player_id
@@ -81,3 +86,9 @@ def filter_players(
 
 def get_players_without_user(team_id: UUID, session: Session) -> list[Player]:
     return PlayerReadRepo(session=session).get_all_without_user(team_id)
+
+
+def get_all_players_only_name_and_shirt(
+    team_id: UUID, session: Session
+) -> list[PlayerNameAndShirt]:
+    return PlayerReadRepo(session=session).get_all_players_only_name_and_shirt(team_id)

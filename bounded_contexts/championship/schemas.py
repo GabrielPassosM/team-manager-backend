@@ -10,9 +10,9 @@ from bounded_contexts.championship.exceptions import (
 )
 from bounded_contexts.championship.models import (
     ChampionshipStatus,
-    FinalStageOptions,
     ChampionshipFormats,
 )
+from core.enums import StageOptions
 from core.exceptions import StartDateBiggerThanEnd
 from core.schemas import BaseSchema
 
@@ -22,7 +22,7 @@ class _ChampionshipBase(BaseModel):
     start_date: date
     end_date: date | None = None
     is_league_format: bool
-    final_stage: FinalStageOptions | None = None
+    final_stage: StageOptions | None = None
     final_position: int | None = None
 
     @model_validator(mode="after")
@@ -50,7 +50,7 @@ class ChampionshipResponse(BaseSchema):
     start_date: date
     end_date: date | None = None
     is_league_format: bool
-    final_stage: FinalStageOptions | None = None
+    final_stage: StageOptions | None = None
     final_position: int | None = None
     status: ChampionshipStatus
 
@@ -73,7 +73,7 @@ class ChampionshipFilter(BaseModel):
     format: ChampionshipFormats | None = None
     final_position_from: int | None = None
     final_position_to: int | None = None
-    final_stages: list[FinalStageOptions] | None = None
+    final_stages: list[StageOptions] | None = None
 
     order_by: str | None = None
 
