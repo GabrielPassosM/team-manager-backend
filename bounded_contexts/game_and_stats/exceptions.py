@@ -44,3 +44,9 @@ class StatPlayerNotInGamePlayers(HTTPException):
 class InvalidYellowCardsQuantity(HTTPException):
     status_code = 400
     detail = f"Quantidade de cartões amarelos não pode ser maior que 2."
+
+
+@dataclass
+class GameNotFound(HTTPException):
+    status_code = 400
+    detail = f"Jogo não encontrado no sistema."

@@ -1,5 +1,6 @@
 from uuid import UUID, uuid4
 
+from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
@@ -115,12 +116,21 @@ class GamePlayerStatWriteRepo(BaseRepo):
         self.session.add_all(stats)
         self.session.flush()
 
+    def hard_delete_without_commit_by_game_id(self, game_id: UUID) -> None:
+        self.session.exec(
+            delete(GamePlayerStat).where(
+                GamePlayerStat.game_id == game_id,
+                GamePlayerStat.deleted == False,
+            )
+        )
+        self.session.flush()
+
 
 class GamePlayerStatReadRepo(BaseRepo):
     def get_by_game_id(self, game_id: UUID) -> list[GamePlayerStat]:
         return self.session.exec(
-            select(GamePlayerStat)
-            .where(  # type: ignore
+            select(GamePlayerStat)  # type: ignore
+            .where(
                 GamePlayerStat.game_id == game_id,
                 GamePlayerStat.deleted == False,
             )

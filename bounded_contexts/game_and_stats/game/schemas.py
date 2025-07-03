@@ -1,9 +1,11 @@
 from datetime import datetime
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, field_validator
 
 from core.enums import StageOptions
+from core.schemas import BaseSchema
 
 
 class GoalAndAssist(BaseModel):
@@ -16,8 +18,12 @@ class PlayerAndQuantity(BaseModel):
     quantity: int
 
 
-class GameCreate(BaseModel):
-    # For Game
+class NameAndId(BaseModel):
+    id: UUID
+    name: str
+
+
+class GameInfoIn(BaseModel):
     championship_id: UUID
     adversary: str
     date_hour: datetime
@@ -30,19 +36,32 @@ class GameCreate(BaseModel):
     team_penalty_score: int | None = None
     adversary_penalty_score: int | None = None
 
-    # For GamePlayerStat
+    @field_validator("date_hour")
+    @classmethod
+    def validate_date_hour(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            # TODO add timezone config in Team
+            value = value.replace(tzinfo=ZoneInfo("America/Sao_Paulo"))
+        return value
+
+
+class GameStatsIn(BaseModel):
     players: list[UUID] | None = None
     goals_and_assists: list[GoalAndAssist] | None = None
     yellow_cards: list[PlayerAndQuantity] | None = None
     red_cards: list[UUID] | None = None
     mvps: list[PlayerAndQuantity] | None = None
 
+
+class _GameBase(GameInfoIn, GameStatsIn):
     @model_validator(mode="after")
     def make_validations_and_sanitize(self):
         if len(self.adversary) < 1 or len(self.adversary) > 255:
             raise ValueError("Adversary must be between 1 and 255 characters long.")
         if self.round is not None and (self.round < 1 or self.round > 10000):
             raise ValueError("Round must be between 1 and 10000 if provided.")
+        if self.stage and self.round:
+            raise ValueError("Can't have both stage and round")
         if self.is_wo:
             self.team_score = 3
             self.adversary_score = 0
@@ -114,9 +133,21 @@ class GameCreate(BaseModel):
         return self
 
 
-class GameResponse(BaseModel):
+class GameCreate(_GameBase):
+    pass
+
+
+class GameUpdate(_GameBase):
+    has_stats_update: bool
+
+
+class GameStatsToUpdateResponse(GameStatsIn):
+    pass
+
+
+class GameResponse(BaseSchema):
     id: UUID
-    championship_name: str
+    championship: NameAndId
     adversary: str
     date_hour: datetime
     round: int | None
@@ -134,3 +165,7 @@ class GamesPageResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class GameAndStatsToUpdateResponse(GameResponse, GameStatsToUpdateResponse):
+    pass
