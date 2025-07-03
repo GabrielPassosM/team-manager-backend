@@ -4,8 +4,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from bounded_contexts.game_and_stats.game import service
-from bounded_contexts.game_and_stats.game.schemas import GameCreate, GamesPageResponse
+from bounded_contexts.game_and_stats.game.schemas import (
+    GameCreate,
+    GamesPageResponse,
+    GameUpdate,
+    GameAndStatsToUpdateResponse,
+)
 from bounded_contexts.user.models import User
+from core.exceptions import AdminRequired
 from core.services.auth import validate_user_token
 from infra.database import get_session
 
@@ -29,3 +35,24 @@ async def get_games_paginated(
     current_user: User = Depends(validate_user_token),
 ) -> GamesPageResponse:
     return service.get_games_paginated(current_user.team_id, limit, offset, session)
+
+
+@router.get("/to-update/{game_id}", status_code=200)
+async def get_game_and_stats_to_update(
+    game_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> GameAndStatsToUpdateResponse:
+    if not current_user.has_admin_privileges:
+        raise AdminRequired()
+    return service.get_game_and_stats_to_update(game_id, session)
+
+
+@router.patch("/{game_id}", status_code=200)
+async def update_game_and_stats(
+    game_id: UUID,
+    update_data: GameUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> None:
+    return service.update_game_and_stats(game_id, update_data, current_user, session)

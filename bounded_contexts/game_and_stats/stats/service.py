@@ -1,10 +1,9 @@
-from audioop import reverse
 from uuid import UUID
 
 from sqlmodel import Session
 
 from bounded_contexts.game_and_stats.exceptions import SomePlayersNotFound
-from bounded_contexts.game_and_stats.game.schemas import GameCreate
+from bounded_contexts.game_and_stats.game.schemas import GameStatsIn
 from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.game_and_stats.stats.repo import (
     GamePlayerStatReadRepo,
@@ -16,7 +15,7 @@ from bounded_contexts.user.models import User
 
 
 def create_game_stats(
-    create_data: GameCreate, game_id: UUID, current_user: User, session: Session
+    create_data: GameStatsIn, game_id: UUID, current_user: User, session: Session
 ) -> None:
     if not create_data.players:
         return
@@ -120,3 +119,14 @@ def get_game_stats(game_id: UUID, session: Session) -> GameStatsResponse:
         red_cards=red_cards,
         mvps=mvps,
     )
+
+
+def update_game_stats(
+    update_data: GameStatsIn, game_id: UUID, current_user: User, session: Session
+) -> None:
+    try:
+        GamePlayerStatWriteRepo(session).hard_delete_without_commit_by_game_id(game_id)
+        create_game_stats(update_data, game_id, current_user, session)
+    except Exception as e:
+        session.rollback()
+        raise e
