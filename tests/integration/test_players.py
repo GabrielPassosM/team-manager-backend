@@ -3,6 +3,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from api.main import app
+from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.player.models import PlayerPositions
 from bounded_contexts.player.schemas import (
     PlayerResponse,
@@ -61,19 +62,22 @@ def test_create_player_for_non_admin_user(mock_user_gen, mock_player_gen):
     mock_user_gen()
 
 
-def test_get_players(mock_player_gen):
+def test_get_players(mock_player_gen, mock_game_player_stat_gen):
     player1 = mock_player_gen(name="B Player")
     player2 = mock_player_gen(name="A Player")
     player3 = mock_player_gen(name="C Player")
+
+    mock_game_player_stat_gen(player_id=player3.id, stat=StatOptions.GOAL)
 
     response = client.get("/players")
     assert response.status_code == 200
 
     response_body = response.json()
-    assert len(response_body) == 3
+    assert len(response_body) == 4  # the stat mock creates an extra player
     assert response_body[0]["id"] == str(player2.id)
     assert response_body[1]["id"] == str(player1.id)
     assert response_body[2]["id"] == str(player3.id)
+    assert response_body[2]["goals"] == 1
     PlayerResponse.model_validate(response_body[0])
 
 

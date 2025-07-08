@@ -13,7 +13,8 @@ class PlayerResponse(BaseSchema):
     shirt_number: int | None = None
     position: PlayerPositions
 
-    # From GameStatsResponse
+    # Stats
+    played: int = 0
     goals: int = 0
     assists: int = 0
     yellow_cards: int = 0
