@@ -58,6 +58,16 @@ class AvailabilityWriteRepo(BaseRepo):
         self.session.merge(availability)
         self.session.commit()
 
+    def delete_many_without_commit(
+        self, availabilities: list[GamePlayerAvailability], current_user_id: UUID
+    ) -> None:
+        for availability in availabilities:
+            availability.deleted = True
+            availability.updated_at = utcnow()
+            availability.updated_by = current_user_id
+            self.session.merge(availability)
+        self.session.flush()
+
     def reactivate(
         self, availability: GamePlayerAvailability, current_user_id: UUID
     ) -> None:

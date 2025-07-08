@@ -14,6 +14,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
 )
 from bounded_contexts.game_and_stats.models import GamePlayerStat, StatOptions
 from core.repo import BaseRepo
+from libs.datetime import utcnow
 
 
 class GamePlayerStatWriteRepo(BaseRepo):
@@ -123,6 +124,26 @@ class GamePlayerStatWriteRepo(BaseRepo):
                 GamePlayerStat.deleted == False,
             )
         )
+        self.session.flush()
+
+    def soft_delete_without_commit(
+        self, game_stats: list[GamePlayerStat], current_user_id: UUID
+    ) -> None:
+        for stat in game_stats:
+            stat.deleted = True
+            stat.updated_at = utcnow()
+            stat.updated_by = current_user_id
+            self.session.merge(stat)
+        self.session.flush()
+
+    def reactivate_without_commit(
+        self, game_stats: list[GamePlayerStat], current_user_id: UUID
+    ) -> None:
+        for stat in game_stats:
+            stat.deleted = False
+            stat.updated_at = utcnow()
+            stat.updated_by = current_user_id
+            self.session.merge(stat)
         self.session.flush()
 
 

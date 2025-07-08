@@ -53,6 +53,9 @@ def create_game_player_availability(
 def get_game_players_availability(
     game_id: UUID, session: Session, current_user: User
 ) -> GamePlayersAvailabilityResponse:
+    if not GameReadRepo(session).get_by_id(game_id):
+        raise GameNotFound()
+
     availabilities = AvailabilityReadRepo(session).get_by_game_id(game_id)
 
     user_player = current_user.player
@@ -130,4 +133,16 @@ def delete_game_player_availability(
     AvailabilityWriteRepo(session).delete(
         availability=availability,
         current_user_id=current_user.id,
+    )
+
+
+def delete_game_players_availability(
+    game_id: UUID, current_user_id: UUID, session: Session
+) -> None:
+    availabilities = AvailabilityReadRepo(session).get_by_game_id(game_id)
+    if not availabilities:
+        return
+
+    AvailabilityWriteRepo(session).delete_many_without_commit(
+        availabilities, current_user_id
     )
