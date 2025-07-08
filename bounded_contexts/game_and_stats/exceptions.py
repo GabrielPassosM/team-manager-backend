@@ -50,3 +50,24 @@ class InvalidYellowCardsQuantity(HTTPException):
 class GameNotFound(HTTPException):
     status_code = 400
     detail = f"Jogo não encontrado no sistema."
+
+
+@dataclass
+class UserNeedsAssociatedPlayer(HTTPException):
+    status_code = 400
+    detail = f"Usuário precisa estar associado a um jogador para realizar esta ação."
+    is_admin: bool
+
+    def __post_init__(self):
+        if self.is_admin:
+            self.detail += " Acesse a página de usuários para fazer a associação."
+        else:
+            self.detail += (
+                " Entre em contato com um administrador para fazer a associação."
+            )
+
+
+@dataclass
+class AvailabilityNotFound(HTTPException):
+    status_code = 400
+    detail = f"Disponibilidade não encontrada para o jogador no jogo selecionado."
