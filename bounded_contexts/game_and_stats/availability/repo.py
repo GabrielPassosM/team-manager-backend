@@ -6,7 +6,10 @@ from bounded_contexts.game_and_stats.availability.schemas import (
     GamePlayerAvailabilityCreate,
     GamePlayerAvailabilityUpdate,
 )
-from bounded_contexts.game_and_stats.models import GamePlayerAvailability
+from bounded_contexts.game_and_stats.models import (
+    GamePlayerAvailability,
+    AvailabilityStatus,
+)
 from core.repo import BaseRepo
 from libs.datetime import utcnow
 
@@ -69,9 +72,13 @@ class AvailabilityWriteRepo(BaseRepo):
         self.session.flush()
 
     def reactivate(
-        self, availability: GamePlayerAvailability, current_user_id: UUID
+        self,
+        availability: GamePlayerAvailability,
+        new_status: AvailabilityStatus,
+        current_user_id: UUID,
     ) -> None:
         availability.deleted = False
+        availability.status = new_status
         availability.updated_at = utcnow()
         availability.updated_by = current_user_id
         self.session.merge(availability)

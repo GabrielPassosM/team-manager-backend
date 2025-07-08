@@ -39,6 +39,7 @@ def create_game_player_availability(
     if deleted_availability:
         AvailabilityWriteRepo(session).reactivate(
             availability=deleted_availability,
+            new_status=create_data.status,
             current_user_id=current_user.id,
         )
     else:
