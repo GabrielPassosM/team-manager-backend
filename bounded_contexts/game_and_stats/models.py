@@ -35,8 +35,8 @@ class Game(BaseTable, table=True):
 
 
 class AvailabilityStatus(str, Enum):
-    IN = "in"
-    OUT = "out"
+    AVAILABLE = "available"
+    NOT_AVAILABLE = "not_available"
     DOUBT = "doubt"
 
 
@@ -46,7 +46,9 @@ class GamePlayerAvailability(BaseTable, table=True):
     team_id: UUID = Field(foreign_key="team.id")
     game_id: UUID = Field(foreign_key="game.id")
     player_id: UUID = Field(foreign_key="player.id")
-    status: str = Field(min_length=1, max_length=10)  # AvailabilityStatus
+    status: str = Field(min_length=1, max_length=50)  # AvailabilityStatus
+
+    player: Optional["Player"] = Relationship(back_populates="game_player_availability")
 
 
 class StatOptions(str, Enum):

@@ -8,7 +8,13 @@ from sqlmodel import select
 
 from api.main import app
 from bounded_contexts.championship.models import Championship
-from bounded_contexts.game_and_stats.models import Game, GamePlayerStat, StatOptions
+from bounded_contexts.game_and_stats.models import (
+    Game,
+    GamePlayerStat,
+    StatOptions,
+    GamePlayerAvailability,
+    AvailabilityStatus,
+)
 from core.enums import StageOptions
 from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
@@ -61,6 +67,7 @@ class _FakeUserForTokenValidation:
     is_admin: bool = True
     is_super_admin: bool = False
     player_id: UUID | None = None
+    player: Player | None = None
 
 
 _fake_user = _FakeUserForTokenValidation()
@@ -147,8 +154,9 @@ def mock_user_gen(db_session, mock_team):
         team_id=None,
         is_admin=True,
         is_super_admin=False,
-        player_id: UUID | None = None,
+        player: Player | None = None,
     ):
+        player_id = player.id if player else None
         mock = User(
             team_id=team_id or mock_team.id,
             name=name or "Test User",
@@ -169,6 +177,7 @@ def mock_user_gen(db_session, mock_team):
         _fake_user.is_super_admin = mock.is_super_admin
         _fake_user.team_id = mock.team_id
         _fake_user.player_id = mock.player_id
+        _fake_user.player = mock.player
 
         return mock
 
@@ -321,6 +330,43 @@ def mock_game_player_stat(db_session, mock_team, mock_game):
     yield mock
 
 
+@pytest.fixture(scope="function")
+def mock_game_player_availability(db_session, mock_team, mock_game, mock_player):
+    mock = GamePlayerAvailability(
+        team_id=mock_team.id,
+        game_id=mock_game.id,
+        player_id=mock_player.id,
+        status=AvailabilityStatus.AVAILABLE,
+    )
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
+
+    yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_game_player_availability_gen(db_session, mock_team, mock_game, mock_player):
+    def _make_mock(
+        team_id: UUID = None,
+        game_id: UUID = None,
+        player_id: UUID = None,
+        status: AvailabilityStatus = AvailabilityStatus.AVAILABLE,
+    ):
+        mock = GamePlayerAvailability(
+            team_id=team_id or mock_team.id,
+            game_id=game_id or mock_game.id,
+            player_id=player_id or mock_player.id,
+            status=status,
+        )
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
+        return mock
+
+    yield _make_mock
+
+
 def _validate_user_token_testing() -> User:
     return User(
         id=_fake_user.id,
@@ -331,4 +377,5 @@ def _validate_user_token_testing() -> User:
         is_admin=_fake_user.is_admin,
         is_super_admin=_fake_user.is_super_admin,
         player_id=_fake_user.player_id,
+        player=_fake_user.player,
     )

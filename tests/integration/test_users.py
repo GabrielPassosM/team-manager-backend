@@ -214,7 +214,7 @@ def test_error_update_user_with_player_already_associated(
     mock_user_gen, mock_player_gen
 ):
     player = mock_player_gen()
-    user1 = mock_user_gen(player_id=player.id)
+    user1 = mock_user_gen(player=player)
     user2 = mock_user_gen()
 
     data = {

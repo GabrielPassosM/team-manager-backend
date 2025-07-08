@@ -4,7 +4,11 @@ from uuid import UUID
 from fastapi.testclient import TestClient
 
 from api.main import app
+from bounded_contexts.game_and_stats.availability.schemas import (
+    GamePlayersAvailabilityResponse,
+)
 from bounded_contexts.game_and_stats.game.schemas import GamesPageResponse, GameResponse
+from bounded_contexts.game_and_stats.models import AvailabilityStatus
 from bounded_contexts.game_and_stats.stats.schemas import GameStatsResponse
 from core.enums import StageOptions
 
@@ -268,3 +272,85 @@ def test_error_update_game_invalid_championship(
         response.json()["detail"]
         == "A data do jogo deve estar dentro da duração do campeonato (20/11/22 - 18/12/22)."
     )
+
+
+def test_create_game_player_availability(mock_user_gen, mock_game, mock_player):
+    mock_user_gen(player=mock_player)
+
+    data = {
+        "game_id": str(mock_game.id),
+        "status": AvailabilityStatus.AVAILABLE,
+    }
+
+    response = client.post("/player-availability", json=data)
+    assert response.status_code == 201
+
+
+def test_error_create_game_player_availability(mock_user_gen, mock_game, mock_player):
+    mock_user_gen()
+
+    data = {
+        "game_id": str(mock_game.id),
+        "status": AvailabilityStatus.AVAILABLE,
+    }
+
+    response = client.post("/player-availability", json=data)
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "Usuário precisa estar associado a um jogador para realizar esta ação. Acesse a página de usuários para fazer a associação."
+    )
+
+
+def test_get_game_players_availability(
+    mock_user_gen, mock_game, mock_player_gen, mock_game_player_availability_gen
+):
+    player1 = mock_player_gen()
+    player2 = mock_player_gen()
+    player3 = mock_player_gen()
+
+    mock_user_gen(player=player3)
+
+    mock_game_player_availability_gen(
+        player_id=player1.id, status=AvailabilityStatus.AVAILABLE
+    )
+    mock_game_player_availability_gen(
+        player_id=player2.id, status=AvailabilityStatus.NOT_AVAILABLE
+    )
+    mock_game_player_availability_gen(
+        player_id=player3.id, status=AvailabilityStatus.DOUBT
+    )
+
+    response = client.get(f"/player-availability/{mock_game.id}")
+    assert response.status_code == 200
+    response_body = response.json()
+    GamePlayersAvailabilityResponse.model_validate(response_body)
+    assert len(response_body["available"]) == 1
+    assert len(response_body["not_available"]) == 1
+    assert len(response_body["doubt"]) == 1
+    assert response_body["current_player"] == AvailabilityStatus.DOUBT
+    assert response_body["available"][0] == player1.name
+    assert response_body["not_available"][0] == player2.name
+
+
+def test_update_game_players_availability(
+    mock_user_gen, mock_player, mock_game_player_availability
+):
+    mock_user_gen(player=mock_player)
+
+    data = {"status": AvailabilityStatus.DOUBT}
+    response = client.patch(
+        f"/player-availability/{mock_game_player_availability.game_id}", json=data
+    )
+    assert response.status_code == 200
+
+
+def test_delete_game_player_availability(
+    mock_user_gen, mock_player, mock_game_player_availability
+):
+    mock_user_gen(player=mock_player)
+
+    response = client.delete(
+        f"/player-availability/{mock_game_player_availability.game_id}"
+    )
+    assert response.status_code == 204

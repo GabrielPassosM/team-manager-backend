@@ -33,7 +33,9 @@ def test_create_player(mock_user):
     PlayerResponse.model_validate(response_body)
 
 
-def test_create_player_for_non_admin_user(mock_user_gen):
+def test_create_player_for_non_admin_user(mock_user_gen, mock_player_gen):
+    player = mock_player_gen()
+
     # 1 - Non-admin user without player can create a player
     mock_user_gen(is_admin=False)
     data = {
@@ -45,7 +47,7 @@ def test_create_player_for_non_admin_user(mock_user_gen):
     assert response.status_code == 201
 
     # 2 - Non-admin user with player cannot create another player
-    mock_user_gen(is_admin=False, player_id=uuid4())
+    mock_user_gen(is_admin=False, player=player)
     data = {
         "name": "Xavi",
         "shirt_number": 6,
@@ -102,7 +104,7 @@ def test_update_player(mock_player):
 def test_non_admin_user_update_player(mock_player_gen, mock_user_gen):
     # 1 - Non-admin user can update their own player
     player = mock_player_gen()
-    mock_user_gen(is_admin=False, player_id=player.id)
+    mock_user_gen(is_admin=False, player=player)
 
     update_data = {
         "name": "Updated Player A",
@@ -132,7 +134,7 @@ def test_delete_player(mock_player):
 def test_non_admin_user_delete_player(mock_player_gen, mock_user_gen):
     # 1 - Non-admin user can delete their own player
     player = mock_player_gen()
-    mock_user_gen(is_admin=False, player_id=player.id)
+    mock_user_gen(is_admin=False, player=player)
 
     response = client.delete(f"/players/{str(player.id)}")
     assert response.status_code == 204
@@ -194,7 +196,7 @@ def test_get_players_without_user(mock_player_gen, mock_user_gen):
     player1 = mock_player_gen(name="Player A")
     player2 = mock_player_gen(name="Player B")
 
-    mock_user_gen(player_id=player1.id)
+    mock_user_gen(player=player1)
 
     response = client.get("/players/without-user")
     assert response.status_code == 200

@@ -8,7 +8,10 @@ from core.models.base import BaseTable
 
 if TYPE_CHECKING:
     from bounded_contexts.user.models import User
-    from bounded_contexts.game_and_stats.models import GamePlayerStat
+    from bounded_contexts.game_and_stats.models import (
+        GamePlayerStat,
+        GamePlayerAvailability,
+    )
 
 
 class PlayerPositions(str, Enum):
@@ -42,5 +45,8 @@ class Player(BaseTable, table=True):
 
     user: Optional["User"] = Relationship(back_populates="player")
 
-    # Only so the backwards relation works (stat -> player)
+    # Only so the backwards relation works (other_model.player)
     game_player_stat: "GamePlayerStat" = Relationship(back_populates="player")
+    game_player_availability: "GamePlayerAvailability" = Relationship(
+        back_populates="player"
+    )

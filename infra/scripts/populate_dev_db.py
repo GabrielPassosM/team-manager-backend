@@ -114,7 +114,7 @@ def _populate() -> None:
             team_id=team1_id,
             game_id=game1_id,
             player_id=player1_id,
-            status=AvailabilityStatus.IN,
+            status=AvailabilityStatus.AVAILABLE,
         ),
         GamePlayerAvailability(
             team_id=team1_id,
@@ -204,13 +204,13 @@ def _populate() -> None:
             team_id=team1_id,
             game_id=game2_id,
             player_id=player1_id,
-            status=AvailabilityStatus.IN,
+            status=AvailabilityStatus.AVAILABLE,
         ),
         GamePlayerAvailability(
             team_id=team1_id,
             game_id=game2_id,
             player_id=player2_id,
-            status=AvailabilityStatus.OUT,
+            status=AvailabilityStatus.NOT_AVAILABLE,
         ),
         GamePlayerStat(
             team_id=team1_id,
