@@ -45,8 +45,7 @@ class Player(BaseTable, table=True):
 
     user: Optional["User"] = Relationship(back_populates="player")
 
-    # Only so the backwards relation works (other_model.player)
-    game_player_stat: "GamePlayerStat" = Relationship(back_populates="player")
-    game_player_availability: "GamePlayerAvailability" = Relationship(
+    game_player_stat: list["GamePlayerStat"] = Relationship(back_populates="player")
+    game_player_availability: list["GamePlayerAvailability"] = Relationship(
         back_populates="player"
     )

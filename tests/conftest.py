@@ -331,6 +331,32 @@ def mock_game_player_stat(db_session, mock_team, mock_game):
 
 
 @pytest.fixture(scope="function")
+def mock_game_player_stat_gen(db_session, mock_player, mock_team, mock_game):
+    def _make_mock(
+        team_id: UUID = None,
+        game_id: UUID = None,
+        player_id: UUID | None = None,
+        stat: StatOptions = StatOptions.PLAYED,
+        quantity: int = 1,
+        related_stat_id: UUID | None = None,
+    ):
+        mock = GamePlayerStat(
+            team_id=team_id or mock_team.id,
+            game_id=game_id or mock_game.id,
+            player_id=player_id or mock_player.id,
+            stat=stat,
+            quantity=quantity,
+            related_stat_id=related_stat_id,
+        )
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
+        return mock
+
+    yield _make_mock
+
+
+@pytest.fixture(scope="function")
 def mock_game_player_availability(db_session, mock_team, mock_game, mock_player):
     mock = GamePlayerAvailability(
         team_id=mock_team.id,

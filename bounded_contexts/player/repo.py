@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 from bounded_contexts.player.models import Player
@@ -61,18 +62,17 @@ class PlayerWriteRepo(BaseRepo):
 
 
 class PlayerReadRepo(BaseRepo):
-    def get_all_excluding_current_player(
-        self, team_id: UUID, current_player_id: UUID | None
-    ) -> list[Player]:
-        query = select(Player).where(
-            Player.team_id == team_id,
-            Player.deleted == False,
-        )
-        if current_player_id:
-            query = query.where(Player.id != current_player_id)
-        query = query.order_by(Player.name)
-
-        return self.session.exec(query).all()
+    def get_by_team_id(self, team_id: UUID) -> list[Player]:
+        return self.session.exec(
+            (  # type: ignore
+                select(Player)
+                .where(
+                    Player.team_id == team_id,
+                    Player.deleted == False,
+                )
+                .options(selectinload(Player.game_player_stat))
+            ).order_by(Player.name)
+        ).all()
 
     def get_by_id(self, player_id: UUID) -> Player | None:
         return self.session.exec(
@@ -91,9 +91,13 @@ class PlayerReadRepo(BaseRepo):
         ).all()
 
     def get_by_filters(self, team_id: UUID, filter_data: PlayerFilter) -> list[Player]:
-        query = select(Player).where(
-            Player.team_id == team_id,
-            Player.deleted == False,
+        query = (
+            select(Player)
+            .where(
+                Player.team_id == team_id,
+                Player.deleted == False,
+            )
+            .options(selectinload(Player.game_player_stat))
         )
 
         if filter_data.name:

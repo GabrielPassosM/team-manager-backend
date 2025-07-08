@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlmodel import Session
 
+from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.player.exceptions import PlayerNotFound
 from bounded_contexts.player.models import Player
 from bounded_contexts.player.repo import PlayerReadRepo, PlayerWriteRepo
@@ -10,6 +11,7 @@ from bounded_contexts.player.schemas import (
     PlayerUpdate,
     PlayerFilter,
     PlayerNameAndShirt,
+    PlayerResponse,
 )
 from bounded_contexts.storage.service import delete_player_image_from_bucket
 from bounded_contexts.team.exceptions import TeamNotFound
@@ -38,11 +40,67 @@ def create_player(
     return player
 
 
-def get_players_by_team(
+def get_players_and_stats(
     team_id: UUID, session: Session, current_player_id: UUID | None = None
-) -> list[Player]:
-    return PlayerReadRepo(session=session).get_all_excluding_current_player(
-        team_id, current_player_id
+) -> list[PlayerResponse]:
+    players = PlayerReadRepo(session=session).get_by_team_id(team_id)
+
+    response_items = []
+    current_player_item = None
+    for player in players:
+        item = _make_player_response(player)
+        if current_player_id and player.id == current_player_id:
+            current_player_item = item
+            continue
+
+        response_items.append(item)
+
+    if current_player_item:
+        response_items.insert(0, current_player_item)
+
+    return response_items
+
+
+def filter_players(
+    team_id: UUID, filter_data: PlayerFilter, session: Session
+) -> list[PlayerResponse]:
+    players = PlayerReadRepo(session=session).get_by_filters(team_id, filter_data)
+
+    response_items = []
+    for player in players:
+        response_items.append(_make_player_response(player))
+
+    return response_items
+
+
+def _make_player_response(player: Player) -> PlayerResponse:
+    played, goals, assists, yellows, reds, mvps = 0, 0, 0, 0, 0, 0
+    for stat in player.game_player_stat:
+        if stat.stat == StatOptions.PLAYED:
+            played += 1
+        elif stat.stat == StatOptions.GOAL:
+            goals += 1
+        elif stat.stat == StatOptions.ASSIST:
+            assists += 1
+        elif stat.stat == StatOptions.YELLOW_CARD:
+            yellows += 1
+        elif stat.stat == StatOptions.RED_CARD:
+            reds += 1
+        elif stat.stat == StatOptions.MVP:
+            mvps += 1
+
+    return PlayerResponse(
+        id=player.id,
+        name=player.name,
+        image_url=player.image_url,
+        shirt_number=player.shirt_number,
+        position=player.position,
+        played=played,
+        goals=goals,
+        assists=assists,
+        yellow_cards=yellows,
+        red_cards=reds,
+        mvps=mvps,
     )
 
 
@@ -76,12 +134,6 @@ def delete_player(player_id: UUID, session: Session, current_user: User) -> None
         delete_player_image_from_bucket(player_to_delete.image_url)
 
     PlayerWriteRepo(session=session).delete(player_to_delete, current_user)
-
-
-def filter_players(
-    team_id: UUID, filter_data: PlayerFilter, session: Session
-) -> list[Player]:
-    return PlayerReadRepo(session=session).get_by_filters(team_id, filter_data)
 
 
 def get_players_without_user(team_id: UUID, session: Session) -> list[Player]:

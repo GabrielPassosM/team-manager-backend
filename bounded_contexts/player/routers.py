@@ -35,13 +35,9 @@ async def get_players(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> list[PlayerResponse]:
-    players = service.get_players_by_team(
+    return service.get_players_and_stats(
         current_user.team_id, session, current_user.player_id
     )
-    if current_user.player:
-        players.insert(0, current_user.player)
-
-    return [PlayerResponse.model_validate(player) for player in players]
 
 
 @router.get("/without-user", status_code=200)
@@ -97,7 +93,6 @@ async def filter_players(
     current_user: User = Depends(validate_user_token),
 ) -> list[PlayerResponse]:
     if filter_data.is_empty:
-        players = service.get_players_by_team(current_user.team_id, session)
+        return service.get_players_and_stats(current_user.team_id, session)
     else:
-        players = service.filter_players(current_user.team_id, filter_data, session)
-    return [PlayerResponse.model_validate(player) for player in players]
+        return service.filter_players(current_user.team_id, filter_data, session)
