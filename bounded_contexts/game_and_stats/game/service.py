@@ -4,6 +4,9 @@ from sqlmodel import Session
 
 from bounded_contexts.championship.exceptions import ChampionshipNotFound
 from bounded_contexts.championship.repo import ChampionshipReadRepo
+from bounded_contexts.game_and_stats.availability.service import (
+    delete_game_players_availability,
+)
 from bounded_contexts.game_and_stats.exceptions import (
     GameDateOutsideChampionshipRange,
     InvalidChampionshipFormat,
@@ -27,11 +30,13 @@ from bounded_contexts.game_and_stats.stats.repo import GamePlayerStatReadRepo
 from bounded_contexts.game_and_stats.stats.service import (
     create_game_stats,
     update_game_stats,
+    delete_game_stats,
+    reactivate_game_stats,
 )
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
-from core.exceptions import AdminRequired
+from core.exceptions import AdminRequired, SuperAdminRequired
 
 
 def create_game_and_stats(
@@ -225,3 +230,46 @@ def _validate_game_update_request(update_data: GameInfoIn, session: Session) -> 
     game_date = update_data.date_hour.date()
     if not championship.date_is_within_championship(game_date):
         raise GameDateOutsideChampionshipRange(champ_date_range=championship.date_range)
+
+
+def delete_game_and_dependent_tables(
+    game_id: UUID, current_user: User, session: Session
+) -> None:
+    if not current_user.has_admin_privileges:
+        raise AdminRequired()
+
+    game = GameReadRepo(session).get_by_id(game_id)
+    if not game:
+        raise GameNotFound()
+
+    current_user_id = current_user.id
+    try:
+        GameWriteRepo(session).delete_without_commit(game, current_user_id)
+        delete_game_stats(game_id, current_user_id, session)
+        delete_game_players_availability(game_id, current_user_id, session)
+    except Exception as e:
+        session.rollback()
+        raise e
+
+    session.commit()
+
+
+def reactivate_game_and_stats(
+    game_id: UUID, current_user: User, session: Session
+) -> None:
+    if not current_user.is_super_admin:
+        raise SuperAdminRequired()
+
+    game = GameReadRepo(session).get_by_id(game_id, deleted=True)
+    if not game:
+        raise GameNotFound()
+
+    current_user_id = current_user.id
+    try:
+        GameWriteRepo(session).reactivate_without_commit(game, current_user_id)
+        reactivate_game_stats(game_id, current_user_id, session)
+    except Exception as e:
+        session.rollback()
+        raise e
+
+    session.commit()

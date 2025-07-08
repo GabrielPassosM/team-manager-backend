@@ -56,3 +56,21 @@ async def update_game_and_stats(
     current_user: User = Depends(validate_user_token),
 ) -> None:
     return service.update_game_and_stats(game_id, update_data, current_user, session)
+
+
+@router.delete("/{game_id}", status_code=204)
+async def delete_game(
+    game_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> None:
+    return service.delete_game_and_dependent_tables(game_id, current_user, session)
+
+
+@router.post("/reactivate/{game_id}", status_code=201)
+async def reactivate_game(
+    game_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> None:
+    return service.reactivate_game_and_stats(game_id, current_user, session)

@@ -2,7 +2,8 @@ from uuid import UUID
 
 from sqlmodel import Session
 
-from bounded_contexts.game_and_stats.exceptions import SomePlayersNotFound
+from bounded_contexts.game_and_stats.exceptions import SomePlayersNotFound, GameNotFound
+from bounded_contexts.game_and_stats.game.repo import GameReadRepo
 from bounded_contexts.game_and_stats.game.schemas import GameStatsIn
 from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.game_and_stats.stats.repo import (
@@ -77,6 +78,9 @@ def create_game_stats(
 
 
 def get_game_stats(game_id: UUID, session: Session) -> GameStatsResponse:
+    if not GameReadRepo(session).get_by_id(game_id):
+        raise GameNotFound()
+
     game_stats = GamePlayerStatReadRepo(session).get_by_game_id(game_id)
 
     assists_lookup = {
@@ -130,3 +134,21 @@ def update_game_stats(
     except Exception as e:
         session.rollback()
         raise e
+
+
+def delete_game_stats(game_id: UUID, current_user_id: UUID, session: Session) -> None:
+    stats = GamePlayerStatReadRepo(session).get_by_game_id(game_id)
+    if not stats:
+        return
+
+    GamePlayerStatWriteRepo(session).soft_delete_without_commit(stats, current_user_id)
+
+
+def reactivate_game_stats(
+    game_id: UUID, current_user_id: UUID, session: Session
+) -> None:
+    stats = GamePlayerStatReadRepo(session).get_by_game_id(game_id)
+    if not stats:
+        return
+
+    GamePlayerStatWriteRepo(session).reactivate_without_commit(stats, current_user_id)

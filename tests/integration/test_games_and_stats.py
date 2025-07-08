@@ -274,6 +274,34 @@ def test_error_update_game_invalid_championship(
     )
 
 
+def test_delete_and_reactivate_game(
+    mock_user_gen, mock_game, mock_game_player_stat, mock_game_player_availability
+):
+    mock_user_gen()
+
+    delete_response = client.delete(f"/games/{mock_game.id}")
+    assert delete_response.status_code == 204
+
+    stats_response = client.get(f"/stats/{mock_game.id}")
+    assert stats_response.status_code == 404
+    availability_response = client.get(f"/player-availability/{mock_game.id}")
+    assert availability_response.status_code == 404
+
+    # Non super-admin user cannot reactivate
+    reactivate_response = client.post(f"/games/reactivate/{mock_game.id}")
+    assert reactivate_response.status_code == 403
+
+    # Super-admin user can reactivate
+    mock_user_gen(is_super_admin=True)
+    reactivate_response = client.post(f"/games/reactivate/{mock_game.id}")
+    assert reactivate_response.status_code == 201
+
+    stats_response = client.get(f"/stats/{mock_game.id}")
+    assert stats_response.status_code == 200
+    availability_response = client.get(f"/player-availability/{mock_game.id}")
+    assert availability_response.status_code == 200
+
+
 def test_create_game_player_availability(mock_user_gen, mock_game, mock_player):
     mock_user_gen(player=mock_player)
 

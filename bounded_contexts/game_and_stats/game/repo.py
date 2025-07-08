@@ -37,12 +37,26 @@ class GameWriteRepo(BaseRepo):
         self.session.merge(game)
         self.session.flush()
 
+    def delete_without_commit(self, game: Game, current_user_id: UUID):
+        game.deleted = True
+        game.updated_at = utcnow()
+        game.updated_by = current_user_id
+        self.session.merge(game)
+        self.session.flush()
+
+    def reactivate_without_commit(self, game: Game, current_user_id: UUID):
+        game.deleted = False
+        game.updated_at = utcnow()
+        game.updated_by = current_user_id
+        self.session.merge(game)
+        self.session.flush()
+
 
 class GameReadRepo(BaseRepo):
-    def get_by_id(self, game_id: UUID) -> Game | None:
+    def get_by_id(self, game_id: UUID, deleted: bool = False) -> Game | None:
         return self.session.exec(
             select(Game).where(  # type: ignore
-                Game.id == game_id, Game.deleted == False
+                Game.id == game_id, Game.deleted == deleted
             )
         ).first()
 

@@ -22,7 +22,7 @@ class GameDateOutsideChampionshipRange(HTTPException):
 
 @dataclass
 class SomePlayersNotFound(HTTPException):
-    status_code = 400
+    status_code = 404
     detail = f"Alguns jogadores selecionados não foram encontrados no sistema. Por favor entre em contato com o suporte."
 
 
@@ -48,7 +48,7 @@ class InvalidYellowCardsQuantity(HTTPException):
 
 @dataclass
 class GameNotFound(HTTPException):
-    status_code = 400
+    status_code = 404
     detail = f"Jogo não encontrado no sistema."
 
 
@@ -69,5 +69,5 @@ class UserNeedsAssociatedPlayer(HTTPException):
 
 @dataclass
 class AvailabilityNotFound(HTTPException):
-    status_code = 400
+    status_code = 404
     detail = f"Disponibilidade não encontrada para o jogador no jogo selecionado."
