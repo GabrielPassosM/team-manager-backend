@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlmodel import Session
 
 from bounded_contexts.game_and_stats.models import StatOptions
+from bounded_contexts.game_and_stats.stats.service import delete_player_stats
 from bounded_contexts.player.exceptions import PlayerNotFound
 from bounded_contexts.player.models import Player
 from bounded_contexts.player.repo import PlayerReadRepo, PlayerWriteRepo
@@ -133,7 +134,14 @@ def delete_player(player_id: UUID, session: Session, current_user: User) -> None
     if player_to_delete.image_url:
         delete_player_image_from_bucket(player_to_delete.image_url)
 
-    PlayerWriteRepo(session=session).delete(player_to_delete, current_user)
+    try:
+        delete_player_stats(player_id, current_user.id, session)
+        PlayerWriteRepo(session=session).delete_without_commit(
+            player_to_delete, current_user.id
+        )
+    except Exception as e:
+        session.rollback()
+        raise e
 
 
 def get_players_without_user(team_id: UUID, session: Session) -> list[Player]:

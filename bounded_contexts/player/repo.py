@@ -60,6 +60,13 @@ class PlayerWriteRepo(BaseRepo):
 
         self.session.commit()
 
+    def delete_without_commit(self, player: Player, current_user_id: UUID) -> None:
+        player.deleted = True
+        player.updated_at = utcnow()
+        player.updated_by = current_user_id
+        self.session.merge(player)
+        self.session.flush()
+
 
 class PlayerReadRepo(BaseRepo):
     def get_by_team_id(self, team_id: UUID) -> list[Player]:
