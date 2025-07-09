@@ -45,3 +45,16 @@ class CantEditFriendlyChampionship(HTTPException):
 class CantDeleteFriendlyChampionship(HTTPException):
     status_code = 400
     detail = f"Não é possível deletar o campeonato {FRIENDLY_CHAMPIONSHIP_NAME}"
+
+
+@dataclass
+class CantDeleteChampionshipWithGames(HTTPException):
+    status_code = 400
+    detail = "Não é possível remover um campeonato com jogos atrelados a ele."
+    games_count: int
+
+    def __post_init__(self):
+        if self.games_count == 1:
+            self.detail += f" Existe {self.games_count} jogo nessa situação. Por favor, remova-o antes de tentar novamente."
+        else:
+            self.detail += f" Existem {self.games_count} jogos nessa situação. Por favor, remova-os antes de tentar novamente."

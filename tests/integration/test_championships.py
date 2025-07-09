@@ -166,6 +166,15 @@ def test_error_delete_championship_friendly(mock_friendly_championship):
     )
 
 
+def test_error_delete_championship_with_games(mock_user, mock_championship, mock_game):
+    response = client.delete(f"/championships/{str(mock_championship.id)}")
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "Não é possível remover um campeonato com jogos atrelados a ele. Existe 1 jogo nessa situação. Por favor, remova-o antes de tentar novamente."
+    )
+
+
 @time_machine.travel("2025-01-01")
 def test_filter_championships(clean_db, mock_championship_gen):
     champ1 = mock_championship_gen(

@@ -82,3 +82,11 @@ class GameReadRepo(BaseRepo):
                 Game.deleted == False,
             )
         ).one()
+
+    def count_games_by_championship(self, champ_id: UUID) -> int:
+        return self.session.exec(
+            select(func.count()).where(  # type: ignore
+                Game.championship_id == champ_id,
+                Game.deleted == False,
+            )
+        ).one()

@@ -7,6 +7,7 @@ from bounded_contexts.championship.exceptions import (
     ChampionshipNotFound,
     CantEditFriendlyChampionship,
     CantDeleteFriendlyChampionship,
+    CantDeleteChampionshipWithGames,
 )
 from bounded_contexts.championship.models import Championship
 from bounded_contexts.championship.repo import (
@@ -18,9 +19,11 @@ from bounded_contexts.championship.schemas import (
     ChampionshipUpdate,
     ChampionshipFilter,
 )
+from bounded_contexts.game_and_stats.game.repo import GameReadRepo
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
+from core.exceptions import AdminRequired
 from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 
 
@@ -79,11 +82,18 @@ def update_championship(
 
 
 def delete_championship(champ_id: UUID, current_user: User, session: Session) -> None:
+    if not current_user.has_admin_privileges:
+        raise AdminRequired()
+
     champ_to_delete = ChampionshipReadRepo(session=session).get_by_id(champ_id)
     if not champ_to_delete:
         raise ChampionshipNotFound()
 
     if champ_to_delete.name == FRIENDLY_CHAMPIONSHIP_NAME:
         raise CantDeleteFriendlyChampionship()
+
+    games_count = GameReadRepo(session).count_games_by_championship(champ_id)
+    if games_count:
+        raise CantDeleteChampionshipWithGames(games_count)
 
     ChampionshipWriteRepo(session=session).delete(champ_to_delete, current_user.id)
