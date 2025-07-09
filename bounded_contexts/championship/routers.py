@@ -79,7 +79,4 @@ async def delete_championship(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> None:
-    if not current_user.has_admin_privileges:
-        raise AdminRequired()
-
     return service.delete_championship(champ_id, current_user, session)

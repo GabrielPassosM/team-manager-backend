@@ -157,3 +157,11 @@ class GamePlayerStatReadRepo(BaseRepo):
             )
             .options(selectinload(GamePlayerStat.player))
         ).all()
+
+    def get_by_player(self, player_id: UUID) -> list[GamePlayerStat]:
+        return self.session.exec(
+            select(GamePlayerStat).where(  # type: ignore
+                GamePlayerStat.player_id == player_id,
+                GamePlayerStat.deleted == False,
+            )
+        ).all()
