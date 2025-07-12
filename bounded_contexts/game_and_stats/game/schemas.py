@@ -169,3 +169,45 @@ class GamesPageResponse(BaseModel):
 
 class GameAndStatsToUpdateResponse(GameResponse, GameStatsToUpdateResponse):
     pass
+
+
+class GameFilter(BaseModel):
+    championship_id: UUID | None = None
+    adversary: str | None = None
+    date_hour_from: datetime | None = None
+    date_hour_to: datetime | None = None
+    round: int | None = None
+    stages: list[StageOptions] | None = None
+    is_home: bool | None = None
+    is_wo: bool | None = None
+    team_score_from: int | None = None
+    team_score_to: int | None = None
+    adversary_score_from: int | None = None
+    adversary_score_to: int | None = None
+    has_penalty_score: bool | None = None
+
+    order_by: str | None = None
+
+    @property
+    def is_empty(self) -> bool:
+        return all(
+            value is None or (isinstance(value, list) and not value)
+            for value in self.model_dump().values()
+        )
+
+    @field_validator("order_by")
+    @classmethod
+    def validate_order_by_options(cls, v):
+        if v is None:
+            return v
+        options = [
+            "date_hour_asc",
+            "date_hour_desc",
+            "team_score_asc",
+            "team_score_desc",
+            "adversary_score_asc",
+            "adversary_score_desc",
+        ]
+        if v not in options:
+            raise ValueError(f"order_by must be one of {options}")
+        return v

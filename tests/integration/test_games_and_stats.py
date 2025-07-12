@@ -49,8 +49,8 @@ def test_create_and_get_game_and_stats(
     assert response.status_code == 201
     game_id = UUID(response.json())
 
-    # Get games
-    response = client.get("/games")
+    # Get games (without filters)
+    response = client.post("/games/filter", json={})
     assert response.status_code == 200
     response_body = response.json()
     GamesPageResponse.model_validate(response_body)
@@ -171,6 +171,117 @@ def test_error_create_game_invalid_stats(mock_user, mock_championship, mock_play
         response.json()["detail"]
         == "Quantidade de cartões amarelos não pode ser maior que 2."
     )
+
+
+def test_get_games_filtered(mock_user, mock_game_gen, mock_championship_gen):
+    champ1 = mock_championship_gen(
+        start_date=datetime(2024, 1, 1),
+        end_date=datetime(2024, 6, 1),
+        is_league_format=True,
+    )
+    champ2 = mock_championship_gen(
+        start_date=datetime(2025, 1, 1),
+        end_date=datetime(2025, 6, 1),
+        is_league_format=False,
+    )
+
+    game1 = mock_game_gen(
+        championship_id=champ1.id,
+        adversary="Adversary 1",
+        date_hour=datetime(2024, 2, 1, 15, 0, 0),
+        round=10,
+        is_home=True,
+        team_score=2,
+        adversary_score=2,
+        team_penalty_score=5,
+        adversary_penalty_score=4,
+    )
+    game2 = mock_game_gen(
+        championship_id=champ2.id,
+        adversary="Adversary 2",
+        date_hour=datetime(2025, 2, 1, 15, 0, 0),
+        stage=StageOptions.QUARTAS_DE_FINAL,
+        is_home=False,
+        team_score=5,
+        adversary_score=2,
+    )
+    game3 = mock_game_gen(
+        championship_id=champ2.id,
+        adversary="Adversary 3",
+        date_hour=datetime(2025, 2, 8, 15, 0, 0),
+        stage=StageOptions.SEMI_FINAL,
+        is_home=True,
+        is_wo=True,
+        team_score=3,
+        adversary_score=0,
+    )
+
+    data = {"adversary": "adver"}
+
+    response = client.post("/games/filter", json=data)
+    assert response.status_code == 200
+    games = response.json()["items"]
+    GameResponse.model_validate(games[0])
+    assert len(games) == 3
+    assert games[0]["id"] == str(game3.id)
+    assert games[1]["id"] == str(game2.id)
+    assert games[2]["id"] == str(game1.id)
+
+    data["order_by"] = "date_hour_asc"
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert games[0]["id"] == str(game1.id)
+    assert games[1]["id"] == str(game2.id)
+    assert games[2]["id"] == str(game3.id)
+
+    data["date_hour_from"] = "2025-01-01T00:00:00"
+    data["date_hour_to"] = "2025-02-02T00:00:00"
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert len(games) == 1
+    assert games[0]["id"] == str(game2.id)
+
+    data = {"is_home": True, "order_by": "team_score_asc"}
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert len(games) == 2
+    assert games[0]["id"] == str(game1.id)
+    assert games[1]["id"] == str(game3.id)
+
+    data["is_wo"] = True
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert len(games) == 1
+    assert games[0]["id"] == str(game3.id)
+
+    data = {"championship_id": str(champ2.id)}
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert len(games) == 2
+    assert games[0]["id"] == str(game3.id)
+    assert games[1]["id"] == str(game2.id)
+
+    data["stages"] = [StageOptions.QUARTAS_DE_FINAL, StageOptions.SEMI_FINAL]
+    data["team_score_from"] = 3
+    data["team_score_to"] = 5
+    data["adversary_score_to"] = 2
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert len(games) == 2
+    assert games[0]["id"] == str(game3.id)
+    assert games[1]["id"] == str(game2.id)
+
+    data["adversary_score_from"] = 1
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert len(games) == 1
+    assert games[0]["id"] == str(game2.id)
+
+    data = {"has_penalty_score": True}
+    response = client.post("/games/filter", json=data)
+    games = response.json()["items"]
+    assert len(games) == 1
+    assert games[0]["id"] == str(game1.id)
 
 
 def test_update_game_and_stats(
