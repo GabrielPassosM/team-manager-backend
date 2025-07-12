@@ -24,6 +24,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GameAndStatsToUpdateResponse,
     GoalAndAssist,
     PlayerAndQuantity,
+    GameFilter,
 )
 from bounded_contexts.game_and_stats.models import Game, StatOptions
 from bounded_contexts.game_and_stats.stats.repo import GamePlayerStatReadRepo
@@ -68,37 +69,6 @@ def create_game_and_stats(
 
     session.commit()
     return game.id
-
-
-def get_games_paginated(
-    team_id: UUID, limit: int, offset: int, session: Session
-) -> GamesPageResponse:
-    games = GameReadRepo(session).get_all_paginated(team_id, limit, offset)
-
-    response_items = []
-    for game in games:
-        response = GameResponse(
-            id=game.id,
-            championship=NameAndId(
-                id=game.championship_id, name=game.championship.name[:40]
-            ),
-            adversary=game.adversary[:30],
-            date_hour=game.date_hour,
-            round=game.round,
-            stage=game.stage,
-            is_home=game.is_home,
-            is_wo=game.is_wo,
-            team_score=game.team_score,
-            adversary_score=game.adversary_score,
-            team_penalty_score=game.team_penalty_score,
-            adversary_penalty_score=game.adversary_penalty_score,
-        )
-        response_items.append(response)
-
-    total = GameReadRepo(session).count_all(team_id)
-    return GamesPageResponse(
-        items=response_items, total=total, limit=limit, offset=offset
-    )
 
 
 def get_game_and_stats_to_update(
@@ -171,6 +141,43 @@ def get_game_and_stats_to_update(
         yellow_cards=yellow_cards,
         red_cards=red_cards,
         mvps=mvps,
+    )
+
+
+def get_games_filtered_and_paginated(
+    team_id: UUID, filter_data: GameFilter, limit: int, offset: int, session: Session
+) -> GamesPageResponse:
+    if filter_data.is_empty:
+        games, total_games = GameReadRepo(session).get_all_paginated(
+            team_id, limit, offset
+        )
+    else:
+        games, total_games = GameReadRepo(session).get_by_filters_paginated(
+            team_id, filter_data, limit, offset
+        )
+
+    response_items = []
+    for game in games:
+        response = GameResponse(
+            id=game.id,
+            championship=NameAndId(
+                id=game.championship_id, name=game.championship.name[:40]
+            ),
+            adversary=game.adversary[:30],
+            date_hour=game.date_hour,
+            round=game.round,
+            stage=game.stage,
+            is_home=game.is_home,
+            is_wo=game.is_wo,
+            team_score=game.team_score,
+            adversary_score=game.adversary_score,
+            team_penalty_score=game.team_penalty_score,
+            adversary_penalty_score=game.adversary_penalty_score,
+        )
+        response_items.append(response)
+
+    return GamesPageResponse(
+        items=response_items, total=total_games, limit=limit, offset=offset
     )
 
 

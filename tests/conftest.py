@@ -316,6 +316,44 @@ def mock_game(db_session, mock_team, mock_championship):
 
 
 @pytest.fixture(scope="function")
+def mock_game_gen(db_session, mock_team, mock_championship):
+    def _make_mock(
+        team_id: UUID = None,
+        championship_id: UUID = None,
+        adversary: str = None,
+        date_hour: datetime = datetime(2022, 11, 22, 19, 30),
+        round: int | None = None,
+        stage: StageOptions | None = StageOptions.FINAL,
+        is_home: bool = True,
+        is_wo: bool = False,
+        team_score: int | None = None,
+        adversary_score: int | None = None,
+        team_penalty_score: int | None = None,
+        adversary_penalty_score: int | None = None,
+    ):
+        mock = Game(
+            team_id=team_id or mock_team.id,
+            championship_id=championship_id or mock_championship.id,
+            adversary=adversary or f"{uuid4()} FC",
+            date_hour=date_hour,
+            round=round,
+            stage=stage,
+            is_home=is_home,
+            is_wo=is_wo,
+            team_score=team_score,
+            adversary_score=adversary_score,
+            team_penalty_score=team_penalty_score,
+            adversary_penalty_score=adversary_penalty_score,
+        )
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
+        return mock
+
+    yield _make_mock
+
+
+@pytest.fixture(scope="function")
 def mock_game_player_stat(db_session, mock_team, mock_game):
     mock = GamePlayerStat(
         team_id=mock_team.id,
