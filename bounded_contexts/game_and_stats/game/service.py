@@ -4,6 +4,7 @@ from sqlmodel import Session
 
 from bounded_contexts.championship.exceptions import ChampionshipNotFound
 from bounded_contexts.championship.repo import ChampionshipReadRepo
+from bounded_contexts.game_and_stats.availability.repo import AvailabilityReadRepo
 from bounded_contexts.game_and_stats.availability.service import (
     delete_game_players_availability,
 )
@@ -25,6 +26,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GoalAndAssist,
     PlayerAndQuantity,
     GameFilter,
+    NextGameResponse,
 )
 from bounded_contexts.game_and_stats.models import Game, StatOptions
 from bounded_contexts.game_and_stats.stats.repo import GamePlayerStatReadRepo
@@ -280,3 +282,22 @@ def reactivate_game_and_stats(
         raise e
 
     session.commit()
+
+
+def get_next_game(team_id: UUID, session: Session) -> NextGameResponse | None:
+    next_game = GameReadRepo(session).get_next_game(team_id)
+    if not next_game:
+        return None
+
+    confirmed_players = AvailabilityReadRepo(session).count_confirmed_players_by_game(
+        next_game.id
+    )
+
+    return NextGameResponse(
+        id=next_game.id,
+        championship_name=next_game.championship.name[:40],
+        adversary=next_game.adversary[:30],
+        date_hour=next_game.date_hour,
+        is_home=next_game.is_home,
+        confirmed_players=confirmed_players,
+    )

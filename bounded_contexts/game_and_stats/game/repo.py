@@ -216,3 +216,16 @@ class GameReadRepo(BaseRepo):
                 Game.deleted == False,
             )
         ).one()
+
+    def get_next_game(self, team_id: UUID) -> Game | None:
+        return self.session.exec(
+            select(Game)  # type: ignore
+            .where(
+                Game.team_id == team_id,
+                Game.deleted == False,
+                Game.date_hour > utcnow(),
+                Game.team_score == None,
+            )
+            .order_by(Game.date_hour.asc())
+            .limit(1)
+        ).first()

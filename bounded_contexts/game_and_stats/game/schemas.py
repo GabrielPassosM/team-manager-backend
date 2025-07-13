@@ -211,3 +211,12 @@ class GameFilter(BaseModel):
         if v not in options:
             raise ValueError(f"order_by must be one of {options}")
         return v
+
+
+class NextGameResponse(BaseModel):
+    id: UUID
+    championship_name: str
+    adversary: str
+    date_hour: datetime
+    is_home: bool
+    confirmed_players: int

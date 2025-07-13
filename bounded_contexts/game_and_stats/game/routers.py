@@ -10,6 +10,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GameUpdate,
     GameAndStatsToUpdateResponse,
     GameFilter,
+    NextGameResponse,
 )
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
@@ -78,3 +79,12 @@ async def reactivate_game(
     current_user: User = Depends(validate_user_token),
 ) -> None:
     return service.reactivate_game_and_stats(game_id, current_user, session)
+
+
+@router.get("/next-game", status_code=200)
+async def get_next_game(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> NextGameResponse | None:
+    """Dashboard endpoint"""
+    return service.get_next_game(current_user.team_id, session)
