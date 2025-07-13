@@ -1,13 +1,18 @@
 from datetime import datetime
 from uuid import UUID
 
+import time_machine
 from fastapi.testclient import TestClient
 
 from api.main import app
 from bounded_contexts.game_and_stats.availability.schemas import (
     GamePlayersAvailabilityResponse,
 )
-from bounded_contexts.game_and_stats.game.schemas import GamesPageResponse, GameResponse
+from bounded_contexts.game_and_stats.game.schemas import (
+    GamesPageResponse,
+    GameResponse,
+    NextGameResponse,
+)
 from bounded_contexts.game_and_stats.models import AvailabilityStatus
 from bounded_contexts.game_and_stats.stats.schemas import GameStatsResponse
 from core.enums import StageOptions
@@ -493,3 +498,31 @@ def test_delete_game_player_availability(
         f"/player-availability/{mock_game_player_availability.game_id}"
     )
     assert response.status_code == 204
+
+
+@time_machine.travel("2025-01-01")
+def test_get_next_game(mock_user, mock_game_gen, mock_championship_gen):
+    # 1 - No next game
+    response = client.get("/games/next-game")
+    assert response.status_code == 200
+    assert response.json() is None
+
+    # 2 - With next game
+    champ = mock_championship_gen(start_date=datetime(2025, 1, 1))
+    game = mock_game_gen(
+        championship_id=champ.id,
+        adversary="Adversary Team",
+        date_hour=datetime(2025, 1, 2, 15, 0, 0),
+        stage=StageOptions.SEMI_FINAL,
+    )
+
+    response = client.get("/games/next-game")
+    assert response.status_code == 200
+    response_body = response.json()
+    NextGameResponse.model_validate(response_body)
+    assert response_body["id"] == str(game.id)
+    assert response_body["championship_name"] == champ.name[:40]
+    assert response_body["adversary"] == game.adversary[:30]
+    assert response_body["date_hour"] == game.date_hour.isoformat()
+    assert response_body["is_home"] == game.is_home
+    assert response_body["confirmed_players"] == 0

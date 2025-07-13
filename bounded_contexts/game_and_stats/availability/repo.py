@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlmodel import select
+from sqlalchemy import func
 
 from bounded_contexts.game_and_stats.availability.schemas import (
     GamePlayerAvailabilityCreate,
@@ -104,3 +105,12 @@ class AvailabilityReadRepo(BaseRepo):
                 GamePlayerAvailability.deleted == deleted,
             )
         ).first()
+
+    def count_confirmed_players_by_game(self, game_id: UUID) -> int:
+        return self.session.exec(
+            select(func.count()).where(  # type: ignore
+                GamePlayerAvailability.game_id == game_id,
+                GamePlayerAvailability.status == AvailabilityStatus.AVAILABLE,
+                GamePlayerAvailability.deleted == False,
+            )
+        ).one()
