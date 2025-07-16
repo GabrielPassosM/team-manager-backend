@@ -13,8 +13,11 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GameResponse,
     NextGameResponse,
 )
-from bounded_contexts.game_and_stats.models import AvailabilityStatus
-from bounded_contexts.game_and_stats.stats.schemas import GameStatsResponse
+from bounded_contexts.game_and_stats.models import AvailabilityStatus, StatOptions
+from bounded_contexts.game_and_stats.stats.schemas import (
+    GameStatsResponse,
+    MonthTopScorerResponse,
+)
 from core.enums import StageOptions
 
 client = TestClient(app)
@@ -76,7 +79,7 @@ def test_create_and_get_game_and_stats(
     assert game["adversary_score"] == data["adversary_score"]
 
     # Get game stats
-    response = client.get(f"/stats/{game_id}")
+    response = client.get(f"/stats/game/{game_id}")
     assert response.status_code == 200
     response_body = response.json()
     GameStatsResponse.model_validate(response_body)
@@ -398,7 +401,7 @@ def test_delete_and_reactivate_game(
     delete_response = client.delete(f"/games/{mock_game.id}")
     assert delete_response.status_code == 204
 
-    stats_response = client.get(f"/stats/{mock_game.id}")
+    stats_response = client.get(f"/stats/game/{mock_game.id}")
     assert stats_response.status_code == 404
     availability_response = client.get(f"/player-availability/{mock_game.id}")
     assert availability_response.status_code == 404
@@ -412,7 +415,7 @@ def test_delete_and_reactivate_game(
     reactivate_response = client.post(f"/games/reactivate/{mock_game.id}")
     assert reactivate_response.status_code == 201
 
-    stats_response = client.get(f"/stats/{mock_game.id}")
+    stats_response = client.get(f"/stats/game/{mock_game.id}")
     assert stats_response.status_code == 200
     availability_response = client.get(f"/player-availability/{mock_game.id}")
     assert availability_response.status_code == 200
@@ -526,3 +529,94 @@ def test_get_next_game(mock_user, mock_game_gen, mock_championship_gen):
     assert response_body["date_hour"] == game.date_hour.isoformat()
     assert response_body["is_home"] == game.is_home
     assert response_body["confirmed_players"] == 0
+
+
+@time_machine.travel("2025-01-17")
+def test_get_month_top_scorer(
+    mock_user,
+    mock_player_gen,
+    mock_game_player_stat_gen,
+    mock_game_gen,
+    mock_championship_gen,
+):
+    # 1 - No top scorer
+    response = client.get("/stats/month-top-scorer")
+    assert response.status_code == 200
+    assert response.json() is None
+
+    # 2 - With top scorer
+    champ = mock_championship_gen(
+        start_date=datetime(2025, 1, 1), end_date=datetime(2025, 6, 30)
+    )
+    game = mock_game_gen(
+        championship_id=champ.id,
+        date_hour=datetime(2025, 1, 15, 15, 0, 0),
+        team_score=3,
+    )
+
+    player1 = mock_player_gen(name="Player 1", shirt_number=10)
+    player2 = mock_player_gen(name="Player 2", shirt_number=9)
+
+    mock_game_player_stat_gen(
+        game_id=game.id,
+        player_id=player1.id,
+        stat=StatOptions.PLAYED,
+    )
+    mock_game_player_stat_gen(
+        game_id=game.id,
+        player_id=player2.id,
+        stat=StatOptions.PLAYED,
+    )
+    mock_game_player_stat_gen(
+        game_id=game.id,
+        player_id=player1.id,
+        stat=StatOptions.GOAL,
+        quantity=1,
+    )
+    mock_game_player_stat_gen(
+        game_id=game.id,
+        player_id=player2.id,
+        stat=StatOptions.GOAL,
+        quantity=2,
+    )
+
+    response = client.get("/stats/month-top-scorer")
+    assert response.status_code == 200
+    response_body = response.json()
+    MonthTopScorerResponse.model_validate(response_body)
+    assert response_body["id"] == str(player2.id)
+    assert response_body["name"] == player2.name
+    assert response_body["image_url"] == player2.image_url
+    assert response_body["shirt"] == player2.shirt_number
+    assert response_body["goals"] == 2
+    assert response_body["games_played"] == 1
+
+    # 3 - Tie in goals, player with less games played wins
+    game2 = mock_game_gen(
+        championship_id=champ.id,
+        date_hour=datetime(2025, 1, 16, 15, 0, 0),
+        team_score=1,
+    )
+    mock_game_player_stat_gen(
+        game_id=game2.id,
+        player_id=player1.id,
+        stat=StatOptions.PLAYED,
+    )
+    mock_game_player_stat_gen(
+        game_id=game2.id,
+        player_id=player1.id,
+        stat=StatOptions.GOAL,
+        quantity=1,
+    )
+
+    # player2 has 2 goals in 1 game, player1 has 2 goals in 2 games
+    response = client.get("/stats/month-top-scorer")
+    assert response.status_code == 200
+    response_body = response.json()
+    MonthTopScorerResponse.model_validate(response_body)
+    assert response_body["id"] == str(player2.id)
+    assert response_body["name"] == player2.name
+    assert response_body["image_url"] == player2.image_url
+    assert response_body["shirt"] == player2.shirt_number
+    assert response_body["goals"] == 2
+    assert response_body["games_played"] == 1

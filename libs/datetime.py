@@ -1,5 +1,8 @@
+import calendar
 from datetime import datetime, timezone, date
 from zoneinfo import ZoneInfo
+
+from libs.base_types.interval import Interval
 
 
 def utcnow():
@@ -12,20 +15,28 @@ def brasilia_now():
 
 def this_day_next_month(reference_date: date | None = None) -> date:
     if not reference_date:
-        reference_date = date.today()
+        reference_date = brasilia_now().date()
 
     year = reference_date.year
-    month = reference_date.month
-    day = reference_date.day
-
-    if month == 12:
+    month = reference_date.month + 1
+    if month > 12:
         month = 1
         year += 1
-    else:
-        month += 1
 
-    while True:
-        try:
-            return date(year, month, day)
-        except ValueError:
-            day -= 1
+    day = reference_date.day
+    last_day_of_next_month = calendar.monthrange(year, month)[1]
+    day = min(day, last_day_of_next_month)
+
+    return date(year, month, day)
+
+
+def current_month_range(reference_date: date | None = None) -> Interval:
+    if not reference_date:
+        reference_date = brasilia_now().date()
+
+    first_day = reference_date.replace(day=1)
+    last_day = reference_date.replace(
+        day=calendar.monthrange(reference_date.year, reference_date.month)[1]
+    )
+
+    return Interval(start=first_day, end=last_day)
