@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func, desc, asc
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
@@ -12,9 +13,10 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GoalAndAssist,
     PlayerAndQuantity,
 )
-from bounded_contexts.game_and_stats.models import GamePlayerStat, StatOptions
+from bounded_contexts.game_and_stats.models import GamePlayerStat, StatOptions, Game
+from bounded_contexts.player.models import Player
 from core.repo import BaseRepo
-from libs.datetime import utcnow
+from libs.datetime import utcnow, current_month_range
 
 
 class GamePlayerStatWriteRepo(BaseRepo):
@@ -165,3 +167,61 @@ class GamePlayerStatReadRepo(BaseRepo):
                 GamePlayerStat.deleted == False,
             )
         ).all()
+
+    def get_month_top_scorer(
+        self, team_id: UUID
+    ) -> tuple[Player | None, int | None, int | None]:
+        interval = current_month_range()
+
+        games_played_cte = (
+            select(
+                GamePlayerStat.player_id,
+                func.count(GamePlayerStat.id).label("games_played"),
+            )
+            .join(Game, Game.id == GamePlayerStat.game_id)
+            .where(
+                Game.date_hour >= interval.start,
+                Game.date_hour <= interval.end,
+                GamePlayerStat.stat == StatOptions.PLAYED,
+                GamePlayerStat.deleted == False,
+                GamePlayerStat.player_id.isnot(None),
+            )
+            .group_by(GamePlayerStat.player_id)
+            .cte("games_played_cte")
+        )
+
+        top_scorer_stmt = (
+            select(
+                Player,
+                func.sum(GamePlayerStat.quantity).label("total_goals"),
+                games_played_cte.c.games_played,
+            )
+            .join(GamePlayerStat, GamePlayerStat.player_id == Player.id)
+            .join(Game, Game.id == GamePlayerStat.game_id)
+            .join(games_played_cte, games_played_cte.c.player_id == Player.id)
+            .where(
+                GamePlayerStat.team_id == team_id,
+                Game.date_hour >= interval.start,
+                Game.date_hour <= interval.end,
+                GamePlayerStat.stat == StatOptions.GOAL,
+                GamePlayerStat.deleted == False,
+                GamePlayerStat.player_id.isnot(None),
+            )
+            .group_by(Player.id, games_played_cte.c.games_played)
+            .order_by(
+                desc("total_goals"),
+                asc(games_played_cte.c.games_played),
+                Player.name.asc(),
+            )
+            .limit(1)
+        )
+
+        result = self.session.exec(top_scorer_stmt).first()
+        if not result:
+            return None, None, None
+
+        player, goals, games_played = result
+        if not goals:
+            return None, None, None
+
+        return player, goals, games_played

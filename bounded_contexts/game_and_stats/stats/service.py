@@ -10,7 +10,10 @@ from bounded_contexts.game_and_stats.stats.repo import (
     GamePlayerStatReadRepo,
     GamePlayerStatWriteRepo,
 )
-from bounded_contexts.game_and_stats.stats.schemas import GameStatsResponse
+from bounded_contexts.game_and_stats.stats.schemas import (
+    GameStatsResponse,
+    MonthTopScorerResponse,
+)
 from bounded_contexts.player.repo import PlayerReadRepo
 from bounded_contexts.user.models import User
 
@@ -162,3 +165,20 @@ def reactivate_game_stats(
         return
 
     GamePlayerStatWriteRepo(session).reactivate_without_commit(stats, current_user_id)
+
+
+def get_month_top_scorer(
+    team_id: UUID, session: Session
+) -> MonthTopScorerResponse | None:
+    player, goals, games = GamePlayerStatReadRepo(session).get_month_top_scorer(team_id)
+    if not player:
+        return None
+
+    return MonthTopScorerResponse(
+        id=player.id,
+        name=player.name,
+        image_url=player.image_url,
+        shirt=player.shirt_number,
+        goals=goals,
+        games_played=games,
+    )
