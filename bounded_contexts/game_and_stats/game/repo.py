@@ -229,3 +229,15 @@ class GameReadRepo(BaseRepo):
             .order_by(Game.date_hour.asc())
             .limit(1)
         ).first()
+
+    def get_last_games(self, team_id: UUID, limit: int) -> list[Game]:
+        return self.session.exec(
+            select(Game)  # type: ignore
+            .where(
+                Game.team_id == team_id,
+                Game.team_score != None,
+                Game.deleted == False,
+            )
+            .order_by(Game.date_hour.desc())
+            .limit(limit)
+        ).all()

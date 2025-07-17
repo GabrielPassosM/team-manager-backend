@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
@@ -11,6 +12,14 @@ from core.models.base import BaseTable
 if TYPE_CHECKING:
     from bounded_contexts.championship.models import Championship
     from bounded_contexts.player.models import Player
+
+
+@dataclass
+class GameResult(str, Enum):
+    WIN = "win"
+    LOSS = "loss"
+    DRAW = "draw"
+    PENDING = "pending"
 
 
 class Game(BaseTable, table=True):
@@ -32,6 +41,17 @@ class Game(BaseTable, table=True):
     )
 
     championship: "Championship" = Relationship(back_populates="game")
+
+    @property
+    def result(self) -> GameResult:
+        if self.team_score is None:
+            return GameResult.PENDING
+        if (self.team_score > self.adversary_score) or self.is_wo:
+            return GameResult.WIN
+        if self.team_score < self.adversary_score:
+            return GameResult.LOSS
+        # dont consider penalty score for now
+        return GameResult.DRAW
 
 
 class AvailabilityStatus(str, Enum):
