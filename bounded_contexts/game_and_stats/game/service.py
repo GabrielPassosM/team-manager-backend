@@ -27,6 +27,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
     PlayerAndQuantity,
     GameFilter,
     NextGameResponse,
+    LastGameResponse,
 )
 from bounded_contexts.game_and_stats.models import Game, StatOptions
 from bounded_contexts.game_and_stats.stats.repo import GamePlayerStatReadRepo
@@ -301,3 +302,23 @@ def get_next_game(team_id: UUID, session: Session) -> NextGameResponse | None:
         is_home=next_game.is_home,
         confirmed_players=confirmed_players,
     )
+
+
+def get_last_games(team_id: UUID, session: Session) -> list[LastGameResponse] | None:
+    last_games = GameReadRepo(session).get_last_games(team_id, limit=5)
+    if not last_games:
+        return None
+
+    response_items = []
+    for game in last_games:
+        response_items.append(
+            LastGameResponse(
+                id=game.id,
+                date=game.date_hour.date(),
+                adversary=game.adversary[:30],
+                team_score=game.team_score,
+                adversary_score=game.adversary_score,
+                result=game.result,
+            )
+        )
+    return response_items

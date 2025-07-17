@@ -12,8 +12,13 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GamesPageResponse,
     GameResponse,
     NextGameResponse,
+    LastGameResponse,
 )
-from bounded_contexts.game_and_stats.models import AvailabilityStatus, StatOptions
+from bounded_contexts.game_and_stats.models import (
+    AvailabilityStatus,
+    StatOptions,
+    GameResult,
+)
 from bounded_contexts.game_and_stats.stats.schemas import (
     GameStatsResponse,
     MonthTopScorerResponse,
@@ -620,3 +625,70 @@ def test_get_month_top_scorer(
     assert response_body["shirt"] == player2.shirt_number
     assert response_body["goals"] == 2
     assert response_body["games_played"] == 1
+
+
+def test_get_last_games(mock_user, mock_game_gen):
+    # 1 - No last games
+    response = client.get("/games/last-games")
+    assert response.status_code == 200
+    assert response.json() is None
+
+    # 2 - With 4 last games (bring all)
+    game1 = mock_game_gen(
+        adversary="Adversary 1",
+        date_hour=datetime(2025, 1, 1),
+        team_score=2,
+        adversary_score=1,
+    )
+    game2 = mock_game_gen(
+        adversary="Adversary 2",
+        date_hour=datetime(2025, 1, 2),
+        team_score=3,
+        adversary_score=2,
+    )
+    game3 = mock_game_gen(
+        adversary="Adversary 3",
+        date_hour=datetime(2025, 1, 3),
+        team_score=3,
+        adversary_score=3,
+    )
+    game4 = mock_game_gen(
+        adversary="Adversary 4",
+        date_hour=datetime(2025, 1, 4),
+        team_score=0,
+        adversary_score=1,
+    )
+
+    response = client.get("/games/last-games")
+    response_body = response.json()
+    assert len(response_body) == 4
+    LastGameResponse.model_validate(response_body[0])
+    assert response_body[0]["id"] == str(game4.id)
+    assert response_body[0]["result"] == GameResult.LOSS
+    assert response_body[1]["id"] == str(game3.id)
+    assert response_body[1]["result"] == GameResult.DRAW
+    assert response_body[2]["id"] == str(game2.id)
+    assert response_body[2]["result"] == GameResult.WIN
+    assert response_body[3]["id"] == str(game1.id)
+    assert response_body[3]["result"] == GameResult.WIN
+
+    # 3 - With 6 games (bring 5 more recent)
+    game5 = mock_game_gen(
+        adversary="Adversary 5",
+        date_hour=datetime(2025, 1, 5),
+        team_score=1,
+        adversary_score=1,
+    )
+    game6 = mock_game_gen(
+        adversary="Adversary 6",
+        date_hour=datetime(2025, 1, 6),
+        team_score=4,
+        adversary_score=5,
+    )
+
+    response = client.get("/games/last-games")
+    response_body = response.json()
+    assert len(response_body) == 5
+    assert response_body[0]["id"] == str(game6.id)
+    assert response_body[0]["result"] == GameResult.LOSS
+    assert response_body[-1]["id"] == str(game2.id)

@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, model_validator, field_validator
 
+from bounded_contexts.game_and_stats.models import GameResult
 from core.enums import StageOptions
 from core.schemas import BaseSchema
 
@@ -220,3 +221,12 @@ class NextGameResponse(BaseModel):
     date_hour: datetime
     is_home: bool
     confirmed_players: int
+
+
+class LastGameResponse(BaseModel):
+    id: UUID
+    date: date
+    adversary: str
+    team_score: int
+    adversary_score: int
+    result: GameResult
