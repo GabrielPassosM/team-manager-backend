@@ -26,10 +26,15 @@ class Interval:
             raise self.EndDateBeforeStart("End date cannot be before start date.")
 
         if treat_as_date:
-            if start:
-                start = start.date() if isinstance(start, datetime) else start
-            if end:
-                end = end.date() if isinstance(end, datetime) else end
+            if start and isinstance(start, datetime):
+                start = start.date()
+            if end and isinstance(end, datetime):
+                end = end.date()
+        else:
+            if start and isinstance(start, date):
+                start = datetime(start.year, start.month, start.day)
+            if end and isinstance(end, date):
+                end = datetime(end.year, end.month, end.day)
 
         self.start = start
         self.end = end

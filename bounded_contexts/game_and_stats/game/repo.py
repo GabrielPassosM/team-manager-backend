@@ -11,6 +11,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GameFilter,
 )
 from core.repo import BaseRepo
+from libs.base_types.interval import Interval
 from libs.datetime import utcnow
 
 
@@ -241,3 +242,15 @@ class GameReadRepo(BaseRepo):
             .order_by(Game.date_hour.desc())
             .limit(limit)
         ).all()
+
+    def get_by_interval(self, team_id: UUID, interval: Interval) -> list[Game]:
+        query = select(Game).where(
+            Game.team_id == team_id,
+            Game.team_score != None,
+            Game.deleted == False,
+            Game.date_hour >= interval.start,
+        )
+        if interval.end:
+            query = query.where(Game.date_hour <= interval.end)
+
+        return self.session.exec(query).all()

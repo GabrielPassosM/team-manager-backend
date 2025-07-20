@@ -225,3 +225,26 @@ class GamePlayerStatReadRepo(BaseRepo):
             return None, None, None
 
         return player, goals, games_played
+
+    def get_top_mvp_from_games(
+        self, game_ids: list[UUID]
+    ) -> tuple[Player | None, int | None]:
+        result = self.session.exec(
+            select(Player, func.sum(GamePlayerStat.quantity).label("total_mvp_points"))
+            .join(GamePlayerStat, GamePlayerStat.player_id == Player.id)
+            .where(
+                GamePlayerStat.game_id.in_(game_ids),
+                GamePlayerStat.stat == StatOptions.MVP,
+                GamePlayerStat.deleted == False,
+                GamePlayerStat.player_id.isnot(None),
+            )
+            .group_by(Player.id)
+            .order_by(desc("total_mvp_points"))
+            .limit(1)
+        ).first()
+
+        if not result:
+            return None, None
+
+        player, mvp_points = result
+        return player, mvp_points

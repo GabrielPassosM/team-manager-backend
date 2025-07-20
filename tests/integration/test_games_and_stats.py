@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 
 import time_machine
@@ -22,6 +22,8 @@ from bounded_contexts.game_and_stats.models import (
 from bounded_contexts.game_and_stats.stats.schemas import (
     GameStatsResponse,
     MonthTopScorerResponse,
+    SeasonStatsSummaryResponse,
+    SeasonMVP,
 )
 from core.enums import StageOptions
 
@@ -692,3 +694,108 @@ def test_get_last_games(mock_user, mock_game_gen):
     assert response_body[0]["id"] == str(game6.id)
     assert response_body[0]["result"] == GameResult.LOSS
     assert response_body[-1]["id"] == str(game2.id)
+
+
+def test_get_season_stats_summary(
+    mock_team_gen,
+    mock_user_gen,
+    mock_game_gen,
+    mock_game_player_stat_gen,
+    mock_championship_gen,
+    mock_player_gen,
+    update_object,
+):
+    initial_date = datetime(2025, 1, 1)
+
+    # 1 - Without season start date -> Return None
+    team = mock_team_gen()
+    mock_user_gen(
+        team_id=team.id,
+    )
+    response = client.get("/stats/season-summary")
+    assert response.status_code == 200
+    assert response.json() is None
+
+    # 2 - Without games -> Return None
+    team.season_start_date = initial_date.date()
+    update_object(team)
+    response = client.get("/stats/season-summary")
+    assert response.status_code == 200
+    assert response.json() is None
+
+    # 3 - Season without end date -> Return stats
+    player1 = mock_player_gen(team_id=team.id)
+    player2 = mock_player_gen(team_id=team.id)
+    champ = mock_championship_gen(team_id=team.id, start_date=initial_date)
+
+    game1 = mock_game_gen(
+        team_id=team.id,
+        championship_id=champ.id,
+        date_hour=datetime(2025, 1, 1, 16),
+        team_score=4,
+        adversary_score=4,
+    )
+    mock_game_player_stat_gen(
+        team_id=team.id,
+        game_id=game1.id,
+        player_id=player1.id,
+        stat=StatOptions.MVP,
+        quantity=1,
+    )
+    mock_game_player_stat_gen(
+        team_id=team.id,
+        game_id=game1.id,
+        player_id=player2.id,
+        stat=StatOptions.MVP,
+        quantity=3,
+    )
+
+    game2 = mock_game_gen(
+        team_id=team.id,
+        championship_id=champ.id,
+        date_hour=datetime(2025, 2, 1, 16),
+        team_score=1,
+        adversary_score=0,
+    )
+    mock_game_player_stat_gen(
+        team_id=team.id,
+        game_id=game2.id,
+        player_id=player1.id,
+        stat=StatOptions.MVP,
+        quantity=3,
+    )
+
+    response = client.get("/stats/season-summary")
+    assert response.status_code == 200
+    response_body = response.json()
+    SeasonStatsSummaryResponse.model_validate(response_body)
+    assert response_body["start_date"] == team.season_start_date.isoformat()
+    assert response_body["end_date"] is None
+    assert response_body["wins"] == 1
+    assert response_body["draws"] == 1
+    assert response_body["losses"] == 0
+    assert response_body["goals_scored"] == 5
+    assert response_body["goals_conceded"] == 4
+    assert response_body["clean_sheets"] == 1
+    mvp = response_body["season_mvp"]
+    SeasonMVP.model_validate(mvp)
+    assert mvp["name"] == player1.name[:30]
+    assert mvp["points"] == 4
+
+    # 4 - Season with end date -> Return stats within range
+    team.season_end_date = date(2025, 1, 15)
+    update_object(team)
+
+    response = client.get("/stats/season-summary")
+    response_body = response.json()
+    assert response_body["end_date"] == team.season_end_date.isoformat()
+    assert response_body["wins"] == 0
+    assert response_body["draws"] == 1
+    assert response_body["losses"] == 0
+    assert response_body["goals_scored"] == 4
+    assert response_body["goals_conceded"] == 4
+    assert response_body["clean_sheets"] == 0
+    mvp = response_body["season_mvp"]
+    SeasonMVP.model_validate(mvp)
+    assert mvp["name"] == player2.name[:30]
+    assert mvp["points"] == 3
