@@ -75,6 +75,17 @@ _fake_user = _FakeUserForTokenValidation()
 
 # ------- TEST FIXTURES --------
 @pytest.fixture(scope="function")
+def update_object(db_session):
+    def _update(obj):
+        db_session.merge(obj)
+        db_session.commit()
+        db_session.refresh(obj)
+        return obj
+
+    yield _update
+
+
+@pytest.fixture(scope="function")
 def mock_team(db_session):
     mock = Team(
         name="FC Barcelona",
@@ -108,7 +119,7 @@ def mock_team_gen(db_session, mock_team):
             emblem_url=emblem_url or "https://example.com/image.jpg",
             foundation_date=foundation_date or date(2023, 1, 1),
             paid_until=paid_until,
-            season_start_date=season_start_date or date(2023, 1, 1),
+            season_start_date=season_start_date,
             season_end_date=season_end_date,
             primary_color=primary_color or "#FF0000",
         )

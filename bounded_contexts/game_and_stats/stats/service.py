@@ -5,7 +5,7 @@ from sqlmodel import Session
 from bounded_contexts.game_and_stats.exceptions import SomePlayersNotFound, GameNotFound
 from bounded_contexts.game_and_stats.game.repo import GameReadRepo
 from bounded_contexts.game_and_stats.game.schemas import GameStatsIn
-from bounded_contexts.game_and_stats.models import StatOptions
+from bounded_contexts.game_and_stats.models import StatOptions, GameResult
 from bounded_contexts.game_and_stats.stats.repo import (
     GamePlayerStatReadRepo,
     GamePlayerStatWriteRepo,
@@ -13,9 +13,14 @@ from bounded_contexts.game_and_stats.stats.repo import (
 from bounded_contexts.game_and_stats.stats.schemas import (
     GameStatsResponse,
     MonthTopScorerResponse,
+    SeasonStatsSummaryResponse,
+    SeasonMVP,
 )
 from bounded_contexts.player.repo import PlayerReadRepo
+from bounded_contexts.team.exceptions import TeamNotFound
+from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
+from libs.base_types.interval import Interval
 
 
 def create_game_stats(
@@ -181,4 +186,64 @@ def get_month_top_scorer(
         shirt=player.shirt_number,
         goals=goals,
         games_played=games,
+    )
+
+
+def get_season_stats_summary(
+    team_id: UUID, session: Session
+) -> SeasonStatsSummaryResponse | None:
+    team = TeamReadRepo(session).get_by_id(team_id)
+    if not team:
+        raise TeamNotFound()
+
+    if not team.season_start_date:
+        return None
+
+    season_interval = Interval(
+        start=team.season_start_date,
+        end=team.season_end_date,
+        treat_as_date=False,
+    )
+
+    games = GameReadRepo(session).get_by_interval(team_id, season_interval)
+    if not games:
+        return None
+
+    game_ids = [game.id for game in games]
+    mvp_player, mvp_points = GamePlayerStatReadRepo(session).get_top_mvp_from_games(
+        game_ids
+    )
+
+    wins, draws, losses, goals_scored, goals_conceded, clean_sheets = 0, 0, 0, 0, 0, 0
+    for game in games:
+        game_result = game.result.value
+        if game_result == GameResult.WIN:
+            wins += 1
+        elif game_result == GameResult.DRAW:
+            draws += 1
+        elif game_result == GameResult.LOSS:
+            losses += 1
+
+        if not game.is_wo:
+            goals_scored += game.team_score
+
+        if game.adversary_score > 0:
+            goals_conceded += game.adversary_score
+        elif not game.is_wo:
+            clean_sheets += 1
+
+    season_mvp = None
+    if mvp_player and mvp_points:
+        season_mvp = SeasonMVP(name=mvp_player.name[:30], points=mvp_points)
+
+    return SeasonStatsSummaryResponse(
+        start_date=team.season_start_date,
+        end_date=team.season_end_date,
+        wins=wins,
+        draws=draws,
+        losses=losses,
+        goals_scored=goals_scored,
+        goals_conceded=goals_conceded,
+        clean_sheets=clean_sheets,
+        season_mvp=season_mvp,
     )

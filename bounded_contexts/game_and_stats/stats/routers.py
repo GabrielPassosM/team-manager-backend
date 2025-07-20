@@ -7,6 +7,7 @@ from bounded_contexts.game_and_stats.stats import service
 from bounded_contexts.game_and_stats.stats.schemas import (
     GameStatsResponse,
     MonthTopScorerResponse,
+    SeasonStatsSummaryResponse,
 )
 from bounded_contexts.user.models import User
 from core.services.auth import validate_user_token
@@ -31,3 +32,12 @@ async def get_month_top_scorer(
 ) -> MonthTopScorerResponse | None:
     """Dashboard endpoint"""
     return service.get_month_top_scorer(current_user.team_id, session)
+
+
+@router.get("/season-summary", status_code=200)
+async def get_season_stats_summary(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> SeasonStatsSummaryResponse | None:
+    """Dashboard endpoint"""
+    return service.get_season_stats_summary(current_user.team_id, session)
