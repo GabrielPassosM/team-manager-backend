@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Cookie
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from uuid import UUID
 
@@ -13,18 +14,20 @@ from bounded_contexts.user.schemas import (
 )
 from core.exceptions import AdminRequired
 from core.services.auth import create_access_token, validate_user_token
+from core.settings import REFRESH_TOKEN_EXPIRE_DAYS, REFRESH_TOKEN_SECURE_BOOL
 from infra.database import get_session
-
+from libs.datetime import utcnow
 
 router = APIRouter(prefix="/users", tags=["User"])
 
 
-@router.post("/login")
+@router.post("/login", status_code=200)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
-) -> LoginResponse:
+) -> JSONResponse:
     user = service.authenticate_user(form_data.username, form_data.password, session)
+
     access_token = create_access_token(
         data={
             "sub": str(user.id),
@@ -32,10 +35,111 @@ def login(
         }
     )
 
-    return LoginResponse(
+    refresh_token = service.create_logged_user(user.id, session)
+
+    response_data = LoginResponse(
         access_token=access_token,
         user=UserResponse.model_validate(user),
+    ).model_dump()
+
+    response_data["user"]["id"] = str(response_data["user"]["id"])
+    response_data["user"]["team_id"] = str(response_data["user"]["team_id"])
+    if response_data["user"].get("player"):
+        response_data["user"]["player"]["id"] = str(
+            response_data["user"]["player"]["id"]
+        )
+
+    response = JSONResponse(content=response_data)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=REFRESH_TOKEN_SECURE_BOOL,
+        samesite="none",
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
     )
+
+    return response
+
+
+@router.post("/logout", status_code=200)
+def logout(
+    refresh_token: str = Cookie(None),
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    if not refresh_token:
+        return JSONResponse(
+            content={"detail": "refresh_token nao enviado"}, status_code=400
+        )
+
+    service.delete_logged_user(refresh_token, session)
+    response = JSONResponse(
+        content={"detail": "Logout realizado com sucesso"}, status_code=200
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=REFRESH_TOKEN_SECURE_BOOL,
+        samesite="none",
+    )
+    return response
+
+
+@router.post("/refresh", status_code=200)
+def refresh_access_token(
+    refresh_token: str = Cookie(None),
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    """
+    Refreshes the access token using the provided refresh token.
+
+    Always return 200 even if the refresh token is invalid or expired.
+    """
+
+    if not refresh_token:
+        return JSONResponse(content={"error": "refresh_token inválido ou expirado"})
+
+    logged_user = service.get_logged_user_by_token(refresh_token, session)
+
+    response = JSONResponse(content={"error": "refresh_token inválido ou expirado"})
+    if not logged_user:
+        response.delete_cookie(
+            key="refresh_token",
+            httponly=True,
+            secure=REFRESH_TOKEN_SECURE_BOOL,
+            samesite="none",
+        )
+        return response
+
+    if not logged_user.expires_at.tzinfo:
+        # SQLite test db does not support timezone-aware datetimes
+        logged_user.expires_at = logged_user.expires_at.replace(tzinfo=utcnow().tzinfo)
+
+    if logged_user.expires_at < utcnow():
+        try:
+            service.delete_logged_user(refresh_token, session)
+        except Exception:
+            # Ignore exception to at least delete the cookie.
+            # We can remove expired users after.
+            pass
+        response.delete_cookie(
+            key="refresh_token",
+            httponly=True,
+            secure=REFRESH_TOKEN_SECURE_BOOL,
+            samesite="none",
+        )
+        return response
+
+    user = logged_user.user
+
+    access_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "team_id": str(user.team_id),
+        }
+    )
+
+    return JSONResponse(content={"access_token": access_token})
 
 
 @router.get("/me", status_code=200)

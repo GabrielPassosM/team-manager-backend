@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from bounded_contexts.user.models import User
+from bounded_contexts.user.logged_user.models import LoggedUser
 from bounded_contexts.user.schemas import UserCreate, UserUpdate
 from core.repo import BaseRepo
 
@@ -6,6 +9,7 @@ from uuid import UUID
 from sqlmodel import select
 
 from core.services.password import hash_password
+from core.settings import REFRESH_TOKEN_EXPIRE_DAYS
 from libs.datetime import utcnow
 
 
@@ -24,6 +28,15 @@ class UserWriteRepo(BaseRepo):
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def create_logged_user(self, user_id: UUID, refresh_token: str) -> None:
+        logged = LoggedUser(
+            user_id=user_id,
+            refresh_token=refresh_token,
+            expires_at=utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        )
+        self.session.add(logged)
+        self.session.commit()
 
     def update(
         self, user: User, update_data: UserUpdate, current_user: User | UUID
@@ -59,6 +72,10 @@ class UserWriteRepo(BaseRepo):
         self.session.delete(user)
         self.session.commit()
 
+    def delete_logged_user(self, logged: LoggedUser) -> None:
+        self.session.delete(logged)
+        self.session.commit()
+
 
 class UserReadRepo(BaseRepo):
     def get_by_id(self, user_id: UUID | str) -> User:
@@ -69,6 +86,13 @@ class UserReadRepo(BaseRepo):
             select(User).where(  # type: ignore
                 User.id == user_id,
                 User.deleted == False,
+            )
+        ).first()
+
+    def get_logged_user_by_token(self, refresh_token: str) -> LoggedUser:
+        return self.session.exec(
+            select(LoggedUser).where(  # type: ignore
+                LoggedUser.refresh_token == refresh_token
             )
         ).first()
 

@@ -4,6 +4,7 @@ from random import randint
 from uuid import uuid4, UUID
 
 import pytest
+from sqlalchemy import func
 from sqlmodel import select
 
 from api.main import app
@@ -19,6 +20,7 @@ from core.enums import StageOptions
 from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
+from bounded_contexts.user.logged_user.models import LoggedUser
 from core.services.auth import validate_user_token
 from core.services.password import hash_password
 from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
@@ -83,6 +85,14 @@ def update_object(db_session):
         return obj
 
     yield _update
+
+
+@pytest.fixture(scope="function")
+def count_logged_users(db_session):
+    def _count():
+        return db_session.exec(func.count(LoggedUser.id)).one()[0]
+
+    yield _count
 
 
 @pytest.fixture(scope="function")

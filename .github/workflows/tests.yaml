@@ -15,6 +15,7 @@ jobs:
       PASSWORD_PEPPER: "any-pepper"
       JWT_KEY: "any-jwt"
       ENV_CONFIG: "test"
+      REFRESH_TOKEN_SECURE_BOOL: 0
 
     steps:
       - uses: actions/checkout@v4
