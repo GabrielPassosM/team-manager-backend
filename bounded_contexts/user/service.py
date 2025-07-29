@@ -1,3 +1,4 @@
+import secrets
 from uuid import UUID
 from sqlmodel import Session
 
@@ -12,6 +13,7 @@ from bounded_contexts.user.exceptions import (
     PlayerAlreadyHasUser,
 )
 from bounded_contexts.user.models import User, UserPermissions
+from bounded_contexts.user.logged_user.models import LoggedUser
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
 from bounded_contexts.user.schemas import UserCreate, UserUpdate
 from core.consts import DEMO_USER_EMAIL
@@ -25,6 +27,23 @@ def authenticate_user(email: str, password: str, session: Session) -> User:
         raise LoginUnauthorized()
 
     return user
+
+
+def create_logged_user(user_id: UUID, session: Session) -> str:
+    refresh_token = secrets.token_urlsafe(32)
+    UserWriteRepo(session).create_logged_user(user_id, refresh_token)
+    return refresh_token
+
+
+def delete_logged_user(refresh_token: str, session: Session) -> None:
+    logged = UserReadRepo(session).get_logged_user_by_token(refresh_token)
+    if not logged:
+        return
+    UserWriteRepo(session).delete_logged_user(logged)
+
+
+def get_logged_user_by_token(refresh_token: str, session: Session) -> LoggedUser | None:
+    return UserReadRepo(session).get_logged_user_by_token(refresh_token)
 
 
 def create_user(user_data: UserCreate, current_user: User, session: Session) -> User:

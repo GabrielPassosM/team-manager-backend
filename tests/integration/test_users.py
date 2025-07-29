@@ -239,7 +239,8 @@ def test_delete_user(mock_user_gen):
     assert response.json()["detail"] == "Usuário não encontrado no sistema"
 
 
-def test_login_success(mock_user_gen):
+def test_login_and_logout_success(mock_user_gen, count_logged_users):
+    # 1 - login
     user = mock_user_gen(password="1234")
     data = {
         "username": user.email,
@@ -250,8 +251,26 @@ def test_login_success(mock_user_gen):
 
     response_body = response.json()
     assert "access_token" in response_body
-
     UserResponse.model_validate(response_body["user"])
+    refresh_token = response.cookies.jar._cookies["testserver.local"]["/"][
+        "refresh_token"
+    ].value
+    assert refresh_token
+
+    # 2 - refresh token
+    response = client.post(f"/users/refresh", cookies={"refresh_token": refresh_token})
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
+    logged_users = count_logged_users()
+    assert logged_users == 1
+
+    # 3 - logout
+    response = client.post(f"/users/logout", cookies={"refresh_token": refresh_token})
+    assert response.status_code == 200
+    assert response.cookies.jar._cookies == {}
+    logged_users = count_logged_users()
+    assert logged_users == 0
 
 
 def test_login_fail(mock_user_gen):
