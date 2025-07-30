@@ -1,13 +1,9 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlmodel import SQLModel, Field, Relationship
 
 from libs.datetime import utcnow
-
-if TYPE_CHECKING:
-    from bounded_contexts.user.models import User
 
 
 class LoggedUser(SQLModel, table=True):
@@ -23,3 +19,6 @@ class LoggedUser(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
     user: "User" = Relationship(back_populates="logged_user")
+
+
+from bounded_contexts.user.models import User
