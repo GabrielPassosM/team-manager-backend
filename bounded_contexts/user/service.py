@@ -17,7 +17,7 @@ from bounded_contexts.user.logged_user.models import LoggedUser
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
 from bounded_contexts.user.schemas import UserCreate, UserUpdate
 from core.consts import DEMO_USER_EMAIL
-from core.exceptions import AdminRequired, SuperAdminRequired, CantUpdateDemoUser
+from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.password import verify_password, hash_password
 
 
@@ -29,9 +29,9 @@ def authenticate_user(email: str, password: str, session: Session) -> User:
     return user
 
 
-def create_logged_user(user_id: UUID, session: Session) -> str:
+def create_logged_user(user_id: UUID, is_demo_user: bool, session: Session) -> str:
     refresh_token = secrets.token_urlsafe(32)
-    UserWriteRepo(session).create_logged_user(user_id, refresh_token)
+    UserWriteRepo(session).create_logged_user(user_id, refresh_token, is_demo_user)
     return refresh_token
 
 
@@ -39,6 +39,16 @@ def delete_logged_user(refresh_token: str, session: Session) -> None:
     logged = UserReadRepo(session).get_logged_user_by_token(refresh_token)
     if not logged:
         return
+
+    # Demo child user is deleted on logout
+    user = logged.user
+    created_by = (
+        UserReadRepo(session).get_by_id(user.created_by) if user.created_by else None
+    )
+    if created_by and created_by.email == DEMO_USER_EMAIL:
+        UserWriteRepo(session=session).delete(user)
+        return
+
     UserWriteRepo(session).delete_logged_user(logged)
 
 
@@ -109,9 +119,6 @@ def update_user(
 def _validate_update_request(
     current_user: User, user_to_update: User, update_data: UserUpdate
 ) -> None:
-    if user_to_update.email == DEMO_USER_EMAIL and not current_user.is_super_admin:
-        raise CantUpdateDemoUser()
-
     if update_data.player_id and not current_user.has_admin_privileges:
         raise AdminRequired()
 
@@ -204,3 +211,7 @@ def _validate_delete_request(current_user: User, user_to_delete: User) -> None:
 
     if user_to_delete.has_admin_privileges:
         raise CantUpdateAdminUser()
+
+
+def clear_expired_logged_users(session: Session) -> int:
+    return UserWriteRepo(session=session).clear_expired_logged_users()

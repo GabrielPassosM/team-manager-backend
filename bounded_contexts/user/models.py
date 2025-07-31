@@ -8,7 +8,6 @@ from core.models.base import BaseTable
 
 if TYPE_CHECKING:
     from bounded_contexts.player.models import Player
-    from bounded_contexts.user.logged_user.models import LoggedUser
 
 
 class User(BaseTable, table=True):
@@ -21,7 +20,9 @@ class User(BaseTable, table=True):
     is_super_admin: bool = Field(default=False)
 
     player: Optional["Player"] = Relationship(back_populates="user")
-    logged_user: Optional["LoggedUser"] = Relationship(back_populates="user")
+    logged_user: Optional["LoggedUser"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
     @property
     def has_admin_privileges(self) -> bool:
@@ -36,3 +37,6 @@ class UserPermissions(str, Enum):
     @property
     def has_admin_privileges(self) -> bool:
         return self in (self.ADMIN, self.SUPER_ADMIN)
+
+
+from bounded_contexts.user.logged_user.models import LoggedUser

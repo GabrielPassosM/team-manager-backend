@@ -29,11 +29,18 @@ class UserWriteRepo(BaseRepo):
         self.session.refresh(user)
         return user
 
-    def create_logged_user(self, user_id: UUID, refresh_token: str) -> None:
+    def create_logged_user(
+        self, user_id: UUID, refresh_token: str, is_demo_user: bool
+    ) -> None:
+        if not is_demo_user:
+            expire_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        else:
+            expire_delta = timedelta(hours=2)
+
         logged = LoggedUser(
             user_id=user_id,
             refresh_token=refresh_token,
-            expires_at=utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+            expires_at=utcnow() + expire_delta,
         )
         self.session.add(logged)
         self.session.commit()
@@ -75,6 +82,20 @@ class UserWriteRepo(BaseRepo):
     def delete_logged_user(self, logged: LoggedUser) -> None:
         self.session.delete(logged)
         self.session.commit()
+
+    def clear_expired_logged_users(self) -> int:
+        # Clear logged users that have expired with more than 1 day
+        expired_logged_users = self.session.exec(
+            select(LoggedUser).where(  # type: ignore
+                LoggedUser.expires_at < (utcnow() - timedelta(days=1))
+            )
+        ).all()
+
+        for logged in expired_logged_users:
+            self.session.delete(logged)
+        self.session.commit()
+
+        return len(expired_logged_users)
 
 
 class UserReadRepo(BaseRepo):
