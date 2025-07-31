@@ -13,12 +13,14 @@ class LoggedUser(SQLModel, table=True):
         default_factory=uuid4,
         primary_key=True,
     )
-    user_id: UUID = Field(foreign_key="user.id")
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
     refresh_token: str = Field(unique=True)
     expires_at: datetime
     created_at: datetime = Field(default_factory=utcnow)
 
-    user: "User" = Relationship(back_populates="logged_user")
+    user: "User" = Relationship(
+        back_populates="logged_user", sa_relationship_kwargs={"cascade": "all, delete"}
+    )
 
 
 from bounded_contexts.user.models import User

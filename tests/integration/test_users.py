@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from api.main import app
 from bounded_contexts.user.models import User
 from bounded_contexts.user.schemas import UserResponse, UserResponse, UserPlayer
+from core.consts import DEMO_USER_EMAIL
 from core.services.password import verify_password
 
 client = TestClient(app)
@@ -269,6 +270,33 @@ def test_login_and_logout_success(mock_user_gen, count_logged_users):
     response = client.post(f"/users/logout", cookies={"refresh_token": refresh_token})
     assert response.status_code == 200
     assert response.cookies.jar._cookies == {}
+    logged_users = count_logged_users()
+    assert logged_users == 0
+
+
+def test_login_and_logout_with_demo_user(mock_user_gen, count_logged_users):
+    user = mock_user_gen(email=DEMO_USER_EMAIL)
+
+    data = {
+        "username": user.email,
+        "password": "1234",
+    }
+    response = client.post(f"/users/login", data=data)
+    assert response.status_code == 200
+    # Should create a new user with a different email
+    response_body = response.json()
+    user = response_body["user"]
+    assert user["name"] == "Usuário Demonstração"
+    assert user["email"] != DEMO_USER_EMAIL
+
+    logged_users = count_logged_users()
+    assert logged_users == 1
+
+    refresh_token = response.cookies.jar._cookies["testserver.local"]["/"][
+        "refresh_token"
+    ].value
+    response = client.post(f"/users/logout", cookies={"refresh_token": refresh_token})
+    assert response.status_code == 200
     logged_users = count_logged_users()
     assert logged_users == 0
 

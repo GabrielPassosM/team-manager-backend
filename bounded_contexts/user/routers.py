@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from uuid import UUID
+from bson import ObjectId
 
 from bounded_contexts.user import service
 from bounded_contexts.user.models import User, UserPermissions
@@ -12,7 +13,8 @@ from bounded_contexts.user.schemas import (
     UserResponse,
     UserUpdate,
 )
-from core.exceptions import AdminRequired
+from core.consts import DEMO_USER_EMAIL
+from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.auth import create_access_token, validate_user_token
 from core.settings import REFRESH_TOKEN_EXPIRE_DAYS, REFRESH_TOKEN_SECURE_BOOL
 from infra.database import get_session
@@ -28,6 +30,20 @@ def login(
 ) -> JSONResponse:
     user = service.authenticate_user(form_data.username, form_data.password, session)
 
+    # We create a new user every time it is a demo login
+    is_demo_user = form_data.username == DEMO_USER_EMAIL
+    if is_demo_user:
+        user = service.create_user(
+            user_data=UserCreate(
+                name="Usuário Demonstração",
+                email=f"{ObjectId()}@demofc.com",
+                password=str(ObjectId()),
+                is_admin=True,
+            ),
+            current_user=user,
+            session=session,
+        )
+
     access_token = create_access_token(
         data={
             "sub": str(user.id),
@@ -35,7 +51,7 @@ def login(
         }
     )
 
-    refresh_token = service.create_logged_user(user.id, session)
+    refresh_token = service.create_logged_user(user.id, is_demo_user, session)
 
     response_data = LoginResponse(
         access_token=access_token,
@@ -242,3 +258,14 @@ async def delete_user(
     current_user: User = Depends(validate_user_token),
 ) -> None:
     return service.delete_user(user_id, current_user, session)
+
+
+@router.delete("/clear/logged-users", status_code=200)
+async def clear_expired_logged_users(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> int:
+    if not current_user.is_super_admin:
+        raise SuperAdminRequired()
+
+    return service.clear_expired_logged_users(session)
