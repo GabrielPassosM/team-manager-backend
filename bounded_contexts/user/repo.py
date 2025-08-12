@@ -97,6 +97,13 @@ class UserWriteRepo(BaseRepo):
 
         return len(expired_logged_users)
 
+    def remove_player_without_commit(self, user: User, current_user_id: UUID) -> None:
+        user.player_id = None
+        user.updated_at = utcnow()
+        user.updated_by = current_user_id
+        self.session.merge(user)
+        self.session.flush()
+
 
 class UserReadRepo(BaseRepo):
     def get_by_id(self, user_id: UUID | str) -> User:
