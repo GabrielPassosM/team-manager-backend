@@ -136,12 +136,18 @@ def delete_player(player_id: UUID, session: Session, current_user: User) -> None
 
     try:
         delete_player_stats(player_id, current_user.id, session)
+        if player_to_delete.user:
+            UserWriteRepo(session=session).remove_player_without_commit(
+                player_to_delete.user, current_user.id
+            )
         PlayerWriteRepo(session=session).delete_without_commit(
             player_to_delete, current_user.id
         )
     except Exception as e:
         session.rollback()
         raise e
+
+    session.commit()
 
 
 def get_players_without_user(team_id: UUID, session: Session) -> list[Player]:

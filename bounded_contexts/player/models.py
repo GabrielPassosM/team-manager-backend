@@ -37,7 +37,7 @@ class PlayerPositions(str, Enum):
 
 
 class Player(BaseTable, table=True):
-    team_id: UUID = Field(foreign_key="team.id", index=True)
+    team_id: UUID = Field(foreign_key="team.id", index=True, ondelete="CASCADE")
     name: str = Field(min_length=1, max_length=255)
     image_url: str | None = Field(nullable=True, default=None)
     shirt_number: int | None = Field(nullable=True, default=None)
@@ -45,7 +45,11 @@ class Player(BaseTable, table=True):
 
     user: Optional["User"] = Relationship(back_populates="player")
 
-    game_player_stat: list["GamePlayerStat"] = Relationship(back_populates="player")
+    game_player_stat: list["GamePlayerStat"] = Relationship(
+        back_populates="player",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
     game_player_availability: list["GamePlayerAvailability"] = Relationship(
-        back_populates="player"
+        back_populates="player",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )

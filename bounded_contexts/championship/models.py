@@ -25,7 +25,7 @@ class ChampionshipFormats(str, Enum):
 
 
 class Championship(BaseTable, table=True):
-    team_id: UUID = Field(foreign_key="team.id", index=True)
+    team_id: UUID = Field(foreign_key="team.id", index=True, ondelete="CASCADE")
     name: str = Field(min_length=1, max_length=255)
     start_date: date = Field()
     end_date: date | None = Field(nullable=True, default=None)
@@ -40,7 +40,10 @@ class Championship(BaseTable, table=True):
     final_position: int | None = Field(nullable=True, default=None, ge=1, le=200)
 
     # Only so the backwards relation works (game -> champ)
-    game: Optional["Game"] = Relationship(back_populates="championship")
+    game: Optional["Game"] = Relationship(
+        back_populates="championship",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
     @property
     def status(self) -> ChampionshipStatus:

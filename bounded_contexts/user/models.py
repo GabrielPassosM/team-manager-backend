@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class User(BaseTable, table=True):
-    team_id: UUID = Field(foreign_key="team.id")
+    team_id: UUID = Field(foreign_key="team.id", ondelete="CASCADE")
     player_id: UUID | None = Field(foreign_key="player.id", unique=True, nullable=True)
     name: str = Field(min_length=1, max_length=255)
     email: str = Field(min_length=1, max_length=254, unique=True, index=True)

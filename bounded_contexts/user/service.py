@@ -46,6 +46,7 @@ def delete_logged_user(refresh_token: str, session: Session) -> None:
         UserReadRepo(session).get_by_id(user.created_by) if user.created_by else None
     )
     if created_by and created_by.email == DEMO_USER_EMAIL:
+        # Logged demo user will be deleted on cascade
         UserWriteRepo(session=session).delete(user)
         return
 
