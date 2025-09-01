@@ -45,14 +45,17 @@ class CurrentTeamResponse(BaseSchema, _TeamBase):
     paid_until: date
 
 
-class TeamRegister(TeamCreate):
+class TeamRegister(BaseModel):
     """
     /admin
     """
 
-    # If only needs to create the base models
-    team_id: UUID | None = None
-
-    # ---- User super admin ----
+    # Email saved on IntentionToSubscribe
     user_email: str
-    user_password: str
+
+
+class IntentionToSubscribeCreate(BaseModel):
+    user_name: str
+    user_email: str
+    phone_number: str
+    team_name: str

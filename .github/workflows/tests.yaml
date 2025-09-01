@@ -16,6 +16,7 @@ jobs:
       JWT_KEY: "any-jwt"
       ENV_CONFIG: "test"
       REFRESH_TOKEN_SECURE_BOOL: 0
+      SUPER_USER_PWD: "any-password"
 
     steps:
       - uses: actions/checkout@v4
