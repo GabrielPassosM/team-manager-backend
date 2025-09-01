@@ -1,12 +1,27 @@
+import yagmail
+
+from api.htmls.intention_email import HTML_INTENTION_EMAIL
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.models import Team
-from bounded_contexts.team.repo import TeamWriteRepo, TeamReadRepo
-from bounded_contexts.team.schemas import TeamCreate, TeamUpdate
+from bounded_contexts.team.repo import (
+    TeamWriteRepo,
+    TeamReadRepo,
+    IntentionToSubscribeWriteRepo,
+    IntentionToSubscribeReadRepo,
+)
+from bounded_contexts.team.schemas import (
+    TeamCreate,
+    TeamUpdate,
+    IntentionToSubscribeCreate,
+)
 
 from uuid import UUID
 from sqlmodel import Session
 
+from bounded_contexts.user.exceptions import EmailAlreadyInUse
 from bounded_contexts.user.models import User
+from bounded_contexts.user.repo import UserReadRepo
+from core.settings import APP_EMAIL_PASSWORD, APP_EMAIL, ENV_CONFIG
 
 
 def create_team(team_data: TeamCreate, session: Session) -> Team:
@@ -51,3 +66,30 @@ def delete_team(team_id: UUID, session: Session) -> None:
         raise TeamNotFound
 
     TeamWriteRepo(session=session).delete(team)
+
+
+def create_intention_to_subscribe(
+    intention_data: IntentionToSubscribeCreate, session: Session
+) -> None:
+    if IntentionToSubscribeReadRepo(session).get_by_email(
+        intention_data.user_email
+    ) or UserReadRepo(session).get_by_email(intention_data.user_email):
+        raise EmailAlreadyInUse()
+
+    IntentionToSubscribeWriteRepo(session).create(intention_data)
+
+    if ENV_CONFIG != "production":
+        return
+
+    html_content = (
+        HTML_INTENTION_EMAIL.replace("user_name", intention_data.user_name)
+        .replace("user_email", intention_data.user_email)
+        .replace("phone_number", intention_data.phone_number)
+        .replace("team_name", intention_data.team_name)
+    )
+
+    try:
+        with yagmail.SMTP(APP_EMAIL, APP_EMAIL_PASSWORD) as yag:
+            yag.send(subject="NOVO CLIENTE !!", contents=html_content)
+    except Exception as e:
+        print(f"Error sending email: {e}")

@@ -1,5 +1,9 @@
-from bounded_contexts.team.models import Team
-from bounded_contexts.team.schemas import TeamCreate, TeamUpdate
+from bounded_contexts.team.models import Team, IntentionToSubscribe
+from bounded_contexts.team.schemas import (
+    TeamCreate,
+    TeamUpdate,
+    IntentionToSubscribeCreate,
+)
 from bounded_contexts.user.models import User
 from core.repo import BaseRepo
 
@@ -43,8 +47,25 @@ class TeamWriteRepo(BaseRepo):
 class TeamReadRepo(BaseRepo):
     def get_by_id(self, team_id: UUID) -> Team:
         return self.session.exec(
-            select(Team).where(
+            select(Team).where(  # type: ignore
                 Team.id == team_id,
                 Team.deleted == False,
+            )
+        ).first()
+
+
+class IntentionToSubscribeWriteRepo(BaseRepo):
+    def create(self, intention_data: IntentionToSubscribeCreate) -> None:
+        intention = IntentionToSubscribe(**intention_data.model_dump())
+        self.session.add(intention)
+        self.session.commit()
+
+
+class IntentionToSubscribeReadRepo(BaseRepo):
+    def get_by_email(self, email: str) -> IntentionToSubscribe | None:
+        return self.session.exec(
+            select(IntentionToSubscribe).where(  # type: ignore
+                IntentionToSubscribe.user_email == email,
+                IntentionToSubscribe.deleted == False,
             )
         ).first()

@@ -4,7 +4,12 @@ from uuid import UUID
 
 from bounded_contexts.team import service
 from bounded_contexts.team.models import Team
-from bounded_contexts.team.schemas import TeamCreate, CurrentTeamResponse, TeamUpdate
+from bounded_contexts.team.schemas import (
+    TeamCreate,
+    CurrentTeamResponse,
+    TeamUpdate,
+    IntentionToSubscribeCreate,
+)
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.auth import validate_user_token
@@ -59,3 +64,11 @@ async def delete_team(
         raise SuperAdminRequired()
 
     return service.delete_team(team_id, session)
+
+
+@router.post("/intention-to-subscribe", status_code=201)
+async def create_intention_to_subscribe(
+    intention_data: IntentionToSubscribeCreate,
+    session: Session = Depends(get_session),
+) -> None:
+    service.create_intention_to_subscribe(intention_data, session)
