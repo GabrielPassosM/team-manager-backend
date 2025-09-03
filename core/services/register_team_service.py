@@ -9,7 +9,11 @@ from sqlmodel import Session
 from bounded_contexts.championship.repo import ChampionshipReadRepo
 from bounded_contexts.championship.schemas import ChampionshipCreate
 from bounded_contexts.championship.service import create_championship
-from bounded_contexts.team.repo import TeamWriteRepo, IntentionToSubscribeReadRepo
+from bounded_contexts.team.repo import (
+    TeamWriteRepo,
+    IntentionToSubscribeReadRepo,
+    IntentionToSubscribeWriteRepo,
+)
 from bounded_contexts.team.schemas import TeamRegister, TeamCreate
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
@@ -101,6 +105,8 @@ def register_new_team_and_create_base_models(
             current_user=super_user,
             session=session,
         )
+
+    IntentionToSubscribeWriteRepo(session).delete(intention_data)
 
     return RegisterTeamResponse(
         team=team_created.id,

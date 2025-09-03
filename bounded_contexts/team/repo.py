@@ -60,6 +60,10 @@ class IntentionToSubscribeWriteRepo(BaseRepo):
         self.session.add(intention)
         self.session.commit()
 
+    def delete(self, intention: IntentionToSubscribe) -> None:
+        self.session.delete(intention)
+        self.session.commit()
+
 
 class IntentionToSubscribeReadRepo(BaseRepo):
     def get_by_email(self, email: str) -> IntentionToSubscribe | None:
