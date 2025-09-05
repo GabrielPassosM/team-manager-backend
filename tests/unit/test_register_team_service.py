@@ -6,17 +6,17 @@ from core.services.register_team_service import _generate_super_user_email
 @pytest.mark.parametrize(
     "team_name, expected_email",
     [
-        ("TeamA", "teama@superuser.com"),
-        ("My Super Team", "mysuperteam@superuser.com"),
-        ("TEAM BIG", "teambig@superuser.com"),
+        ("TeamA", "superuser@teama.com"),
+        ("My Super Team", "superuser@mysuperteam.com"),
+        ("TEAM BIG", "superuser@teambig.com"),
         (
             "ThisIsAnExtremelyLongTeamNameThatExceedsThirtyCharacters",
-            "thisisanextremelylongteamnamet@superuser.com",
+            "superuser@thisisanextremelylongteamnamet.com",
         ),
-        ("Crazy Team 123", "crazyteam123@superuser.com"),
+        ("Crazy Team 123", "superuser@crazyteam123.com"),
         (
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234",
-            "abcdefghijklmnopqrstuvwxyz1234@superuser.com",
+            "superuser@abcdefghijklmnopqrstuvwxyz1234.com",
         ),
     ],
 )

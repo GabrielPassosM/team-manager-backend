@@ -28,4 +28,4 @@ def test_register_team_full_flow(mock_user_gen):
     response_data = response.json()
     RegisterTeamResponse.model_validate(response_data)
     assert response_data["client_user_email"] == data["user_email"]
-    assert response_data["super_user_email"] == "madureirafc@superuser.com"
+    assert response_data["super_user_email"] == "superuser@madureirafc.com"
