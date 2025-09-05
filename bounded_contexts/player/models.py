@@ -1,17 +1,10 @@
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from uuid import UUID
 
 from sqlmodel import Field, Relationship
 
 from core.models.base import BaseTable
-
-if TYPE_CHECKING:
-    from bounded_contexts.user.models import User
-    from bounded_contexts.game_and_stats.models import (
-        GamePlayerStat,
-        GamePlayerAvailability,
-    )
 
 
 class PlayerPositions(str, Enum):
@@ -53,3 +46,10 @@ class Player(BaseTable, table=True):
         back_populates="player",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
+
+
+from bounded_contexts.user.models import User
+from bounded_contexts.game_and_stats.models import (
+    GamePlayerStat,
+    GamePlayerAvailability,
+)
