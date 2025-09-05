@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 from datetime import datetime
 
@@ -8,10 +8,6 @@ from sqlmodel import Field, Relationship
 
 from core.consts import DEFAULT_ADVERSARY
 from core.models.base import BaseTable
-
-if TYPE_CHECKING:
-    from bounded_contexts.championship.models import Championship
-    from bounded_contexts.player.models import Player
 
 
 @dataclass
@@ -40,9 +36,7 @@ class Game(BaseTable, table=True):
         ge=0, le=100, nullable=True, default=None
     )
 
-    championship: "Championship" = Relationship(
-        back_populates="game", sa_relationship_kwargs={"cascade": "all, delete"}
-    )
+    championship: "Championship" = Relationship(back_populates="game")
 
     @property
     def result(self) -> GameResult:
@@ -70,10 +64,7 @@ class GamePlayerAvailability(BaseTable, table=True):
     player_id: UUID = Field(foreign_key="player.id", ondelete="CASCADE")
     status: str = Field(min_length=1, max_length=50)  # AvailabilityStatus
 
-    player: Optional["Player"] = Relationship(
-        back_populates="game_player_availability",
-        sa_relationship_kwargs={"cascade": "all, delete"},
-    )
+    player: Optional["Player"] = Relationship(back_populates="game_player_availability")
 
 
 class StatOptions(str, Enum):
@@ -102,7 +93,8 @@ class GamePlayerStat(BaseTable, table=True):
     stat: str = Field(min_length=1, max_length=50)  # StatOptions
     quantity: int
 
-    player: Optional["Player"] = Relationship(
-        back_populates="game_player_stat",
-        sa_relationship_kwargs={"cascade": "all, delete"},
-    )
+    player: Optional["Player"] = Relationship(back_populates="game_player_stat")
+
+
+from bounded_contexts.championship.models import Championship
+from bounded_contexts.player.models import Player

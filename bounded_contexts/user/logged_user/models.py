@@ -18,9 +18,7 @@ class LoggedUser(SQLModel, table=True):
     expires_at: datetime
     created_at: datetime = Field(default_factory=utcnow)
 
-    user: "User" = Relationship(
-        back_populates="logged_user", sa_relationship_kwargs={"cascade": "all, delete"}
-    )
+    user: "User" = Relationship(back_populates="logged_user")
 
 
 from bounded_contexts.user.models import User

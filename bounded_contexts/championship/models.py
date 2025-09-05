@@ -1,6 +1,6 @@
 from datetime import date
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from uuid import UUID
 
 from sqlmodel import Field, Relationship
@@ -8,9 +8,6 @@ from sqlmodel import Field, Relationship
 from core.models.base import BaseTable
 from libs.base_types.interval import Interval
 from libs.datetime import brasilia_now
-
-if TYPE_CHECKING:
-    from bounded_contexts.game_and_stats.models import Game
 
 
 class ChampionshipStatus(str, Enum):
@@ -64,3 +61,6 @@ class Championship(BaseTable, table=True):
             start=self.start_date,
             end=self.end_date,
         ).date_is_in_interval(date_to_check)
+
+
+from bounded_contexts.game_and_stats.models import Game
