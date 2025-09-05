@@ -117,4 +117,4 @@ def register_new_team_and_create_base_models(
 
 
 def _generate_super_user_email(team_name: str) -> str:
-    return team_name[:30].lower().replace(" ", "") + "@superuser.com"
+    return f"superuser@{team_name[:30].lower().replace(" ", "")}.com"
