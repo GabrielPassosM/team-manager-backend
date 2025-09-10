@@ -1,10 +1,13 @@
 import secrets
 from datetime import timedelta
 from uuid import UUID
+
+from bson import ObjectId
 from sqlmodel import Session
 from loguru import logger
+from starlette.responses import JSONResponse
 
-from bounded_contexts.team.exceptions import TeamNotFound
+from bounded_contexts.team.exceptions import TeamNotFound, TeamSubscriptionExpired
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.exceptions import (
     UserNotFound,
@@ -17,13 +20,146 @@ from bounded_contexts.user.exceptions import (
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.logged_user.models import LoggedUser
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
-from bounded_contexts.user.schemas import UserCreate, UserUpdate, ResetPasswordRequest
+from bounded_contexts.user.schemas import (
+    UserCreate,
+    UserUpdate,
+    ResetPasswordRequest,
+    LoginResponse,
+    UserResponse,
+)
 from core.consts import DEMO_USER_EMAIL
 from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.auth import create_jwt_token, general_validade_token
 from core.services.email import send_email
 from core.services.password import verify_password, hash_password
-from core.settings import FRONTEND_URL, ENV_CONFIG
+from core.settings import (
+    FRONTEND_URL,
+    ENV_CONFIG,
+    REFRESH_TOKEN_SECURE_BOOL,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+)
+from libs.datetime import utcnow
+
+
+def login(username: str, password: str, session: Session) -> JSONResponse:
+    user = authenticate_user(username, password, session)
+
+    # We create a new user every time it is a demo login
+    is_demo_user = username == DEMO_USER_EMAIL
+    if is_demo_user:
+        user = create_user(
+            user_data=UserCreate(
+                name="Usuário Demonstração",
+                email=f"{ObjectId()}@demofc.com",
+                password=str(ObjectId()),
+                is_admin=True,
+            ),
+            current_user=user,
+            session=session,
+        )
+
+    team = user.team
+    if team.paid_until < utcnow().date():
+        raise TeamSubscriptionExpired(is_admin=user.has_admin_privileges)
+
+    access_token = create_jwt_token(
+        data={
+            "sub": str(user.id),
+            "team_id": str(user.team_id),
+        }
+    )
+
+    refresh_token = create_logged_user(user.id, is_demo_user, session)
+
+    response_data = LoginResponse(
+        access_token=access_token,
+        user=UserResponse.model_validate(user),
+    ).model_dump()
+
+    response_data["user"]["id"] = str(response_data["user"]["id"])
+    response_data["user"]["team_id"] = str(response_data["user"]["team_id"])
+    if response_data["user"].get("player"):
+        response_data["user"]["player"]["id"] = str(
+            response_data["user"]["player"]["id"]
+        )
+
+    response = JSONResponse(content=response_data)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=REFRESH_TOKEN_SECURE_BOOL,
+        samesite="none",
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+    )
+
+    return response
+
+
+def logout(refresh_token: str, session: Session) -> JSONResponse:
+    if not refresh_token:
+        return JSONResponse(
+            content={"detail": "refresh_token nao enviado"}, status_code=400
+        )
+
+    delete_logged_user(refresh_token, session)
+    response = JSONResponse(
+        content={"detail": "Logout realizado com sucesso"}, status_code=200
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=REFRESH_TOKEN_SECURE_BOOL,
+        samesite="none",
+    )
+    return response
+
+
+def refresh_access_token(refresh_token: str, session: Session) -> JSONResponse:
+    if not refresh_token:
+        return JSONResponse(content={"error": "refresh_token inválido ou expirado"})
+
+    logged_user = get_logged_user_by_token(refresh_token, session)
+
+    response = JSONResponse(content={"error": "refresh_token inválido ou expirado"})
+    if not logged_user:
+        response.delete_cookie(
+            key="refresh_token",
+            httponly=True,
+            secure=REFRESH_TOKEN_SECURE_BOOL,
+            samesite="none",
+        )
+        return response
+
+    if not logged_user.expires_at.tzinfo:
+        # SQLite test db does not support timezone-aware datetimes
+        logged_user.expires_at = logged_user.expires_at.replace(tzinfo=utcnow().tzinfo)
+
+    if logged_user.expires_at < utcnow():
+        try:
+            delete_logged_user(refresh_token, session)
+        except Exception:
+            # Ignore exception to at least delete the cookie.
+            # We can remove expired users after.
+            pass
+        response.delete_cookie(
+            key="refresh_token",
+            httponly=True,
+            secure=REFRESH_TOKEN_SECURE_BOOL,
+            samesite="none",
+        )
+        return response
+
+    user = logged_user.user
+
+    access_token = create_jwt_token(
+        data={
+            "sub": str(user.id),
+            "team_id": str(user.team_id),
+        }
+    )
+
+    return JSONResponse(content={"access_token": access_token})
 
 
 def authenticate_user(email: str, password: str, session: Session) -> User:
