@@ -1,4 +1,5 @@
 import yagmail
+from loguru import logger
 
 from api.htmls.intention_email import HTML_INTENTION_EMAIL
 from bounded_contexts.team.exceptions import TeamNotFound
@@ -21,6 +22,7 @@ from sqlmodel import Session
 from bounded_contexts.user.exceptions import EmailAlreadyInUse
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
+from core.services.email import send_email
 from core.settings import APP_EMAIL_PASSWORD, APP_EMAIL, ENV_CONFIG
 
 
@@ -89,7 +91,6 @@ def create_intention_to_subscribe(
     )
 
     try:
-        with yagmail.SMTP(APP_EMAIL, APP_EMAIL_PASSWORD) as yag:
-            yag.send(subject="NOVO CLIENTE !!", contents=html_content)
+        send_email(subject="NOVO CLIENTE !!", html=html_content)
     except Exception as e:
-        print(f"Error sending email: {e}")
+        logger.exception(f"Error sending intention to subscribe email: {e}")

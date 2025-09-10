@@ -318,3 +318,42 @@ def test_get_current_user(mock_user):
 
     response_body = response.json()
     UserResponse.model_validate(response_body)
+
+
+def test_forgot_and_reset_password(mock_user_gen):
+    user = mock_user_gen(password="old-pwd")
+
+    # 1 - forgot password
+    data = {
+        "email": user.email,
+    }
+    response = client.post("/users/forgot-password", json=data)
+    assert response.status_code == 200
+    reset_link = response.json()
+    token = reset_link.split("token=")[-1]
+
+    # 2 - reset password with invalid token
+    data = {
+        "token": "invalid-token",
+        "new_password": "new-password-123",
+    }
+    response = client.post("/users/reset-password", json=data)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Token inválido ou expirado."
+
+    # 3 - reset password with valid token
+    data = {
+        "token": token,
+        "new_password": "new-password-123",
+    }
+    response = client.post("/users/reset-password", json=data)
+    assert response.status_code == 200
+
+    # 4 - login with new password
+    data = {
+        "username": user.email,
+        "password": "new-password-123",
+    }
+    response = client.post(f"/users/login", data=data)
+    assert response.status_code == 200
+    assert "access_token" in response.json()

@@ -10,6 +10,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 ENV_CONFIG = os.getenv("ENV_CONFIG")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 TEAMS_BUCKET = os.getenv("TEAMS_BUCKET")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 # Security
 MIGRATIONS_PWD = os.getenv("MIGRATIONS_PWD")

@@ -20,7 +20,13 @@ class _InvalidAccessToken(HTTPException):
     headers = {"WWW-Authenticate": "Bearer"}
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+@dataclass
+class _InvalidToken(HTTPException):
+    status_code = 400
+    detail = "Token inválido ou expirado."
+
+
+def create_jwt_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -48,3 +54,11 @@ def validate_user_token(
         raise _InvalidAccessToken()
 
     return user
+
+
+def general_validade_token(token: str):
+    try:
+        payload = jwt.decode(token, JWT_KEY, algorithms=[JWT_ALGORITHM])
+        return payload["sub"]
+    except JWTError:
+        raise _InvalidToken()

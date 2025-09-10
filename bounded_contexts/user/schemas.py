@@ -49,3 +49,12 @@ class UserResponse(BaseSchema):
 class LoginResponse(BaseModel):
     access_token: str
     user: UserResponse
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

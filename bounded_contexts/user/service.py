@@ -1,6 +1,8 @@
 import secrets
+from datetime import timedelta
 from uuid import UUID
 from sqlmodel import Session
+from loguru import logger
 
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
@@ -15,10 +17,13 @@ from bounded_contexts.user.exceptions import (
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.logged_user.models import LoggedUser
 from bounded_contexts.user.repo import UserWriteRepo, UserReadRepo
-from bounded_contexts.user.schemas import UserCreate, UserUpdate
+from bounded_contexts.user.schemas import UserCreate, UserUpdate, ResetPasswordRequest
 from core.consts import DEMO_USER_EMAIL
 from core.exceptions import AdminRequired, SuperAdminRequired
+from core.services.auth import create_jwt_token, general_validade_token
+from core.services.email import send_email
 from core.services.password import verify_password, hash_password
+from core.settings import FRONTEND_URL, ENV_CONFIG
 
 
 def authenticate_user(email: str, password: str, session: Session) -> User:
@@ -55,6 +60,52 @@ def delete_logged_user(refresh_token: str, session: Session) -> None:
 
 def get_logged_user_by_token(refresh_token: str, session: Session) -> LoggedUser | None:
     return UserReadRepo(session).get_logged_user_by_token(refresh_token)
+
+
+def send_reset_password_email(email: str, session: Session) -> str:
+    user = UserReadRepo(session).get_by_email(email)
+    if not user:
+        raise UserNotFound()
+
+    token = create_jwt_token(
+        data={
+            "sub": str(user.id),
+            "team_id": str(user.team_id),
+        },
+        expires_delta=timedelta(hours=1),
+    )
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
+
+    if "test" not in ENV_CONFIG:
+        send_email(
+            to=email,
+            subject="Redefinição de senha - Forquilha",
+            body=f"{user.name}, uma solicitação de redefinição de senha foi solicitada. Caso você não tenha feito esta solicitação, ignore esse email.<br><br>Caso você tenha feito essa solicitação, clique no link abaixo para definir uma nova senha:<br><br><a href='{reset_link}'>Redefinir minha senha</a><br><br>",
+        )
+
+    return reset_link
+
+
+def reset_password(reset_data: ResetPasswordRequest, session: Session) -> None:
+    user_id = general_validade_token(reset_data.token)
+    user = UserReadRepo(session).get_by_id(user_id)
+    if not user:
+        raise UserNotFound()
+
+    user.hashed_password = hash_password(reset_data.new_password)
+    UserWriteRepo(session).save(user, user.id)
+
+    if "test" in ENV_CONFIG:
+        return
+
+    try:
+        send_email(
+            to=user.email,
+            subject="Sua senha foi atualizada - Forquilha",
+            body=f"Sua senha foi atualizada com sucesso. Caso você não tenha feito essa alteração, entre em contato com o suporte.",
+        )
+    except Exception as e:
+        logger.exception(f"Error sending password reseted email: {e}")
 
 
 def create_user(user_data: UserCreate, current_user: User, session: Session) -> User:
