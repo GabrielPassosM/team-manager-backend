@@ -1,13 +1,10 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlmodel import Field, Relationship
 
 from core.models.base import BaseTable
-
-if TYPE_CHECKING:
-    from bounded_contexts.player.models import Player
 
 
 class User(BaseTable, table=True):
@@ -23,6 +20,7 @@ class User(BaseTable, table=True):
     logged_user: Optional["LoggedUser"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
+    team: "Team" = Relationship(back_populates="users")
 
     @property
     def has_admin_privileges(self) -> bool:
@@ -40,3 +38,5 @@ class UserPermissions(str, Enum):
 
 
 from bounded_contexts.user.logged_user.models import LoggedUser
+from bounded_contexts.player.models import Player
+from bounded_contexts.team.models import Team

@@ -1,5 +1,7 @@
+from datetime import date
 from uuid import uuid4
 
+import time_machine
 from fastapi.testclient import TestClient
 
 from api.main import app
@@ -310,6 +312,39 @@ def test_login_fail(mock_user_gen):
     response = client.post(f"/users/login", data=data)
     assert response.status_code == 401
     assert response.json()["detail"] == "Email ou senha incorretos"
+
+
+@time_machine.travel("2025-05-02")
+def test_login_fail_expired_paid_until(mock_team_gen, mock_user_gen):
+    team = mock_team_gen(paid_until=date(2025, 5, 1))
+
+    # 1 - Admin user trying to login
+    user = mock_user_gen(team_id=team.id, password="1234")
+
+    data = {
+        "username": user.email,
+        "password": "1234",
+    }
+    response = client.post(f"/users/login", data=data)
+    assert response.status_code == 403
+    assert (
+        response.json()["detail"]
+        == "A assinatura do time expirou. Renove sua assinatura para continuar utilizando o sistema."
+    )
+
+    # 2 - Non-admin user trying to login
+    user = mock_user_gen(team_id=team.id, is_admin=False, password="1234")
+
+    data = {
+        "username": user.email,
+        "password": "1234",
+    }
+    response = client.post(f"/users/login", data=data)
+    assert response.status_code == 403
+    assert (
+        response.json()["detail"]
+        == "A assinatura do time expirou. Entre em contato com um administrador do seu time para renová-la."
+    )
 
 
 def test_get_current_user(mock_user):
