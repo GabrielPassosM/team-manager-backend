@@ -12,10 +12,12 @@ from bounded_contexts.user.schemas import (
     LoginResponse,
     UserResponse,
     UserUpdate,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 from core.consts import DEMO_USER_EMAIL
 from core.exceptions import AdminRequired, SuperAdminRequired
-from core.services.auth import create_access_token, validate_user_token
+from core.services.auth import create_jwt_token, validate_user_token
 from core.settings import REFRESH_TOKEN_EXPIRE_DAYS, REFRESH_TOKEN_SECURE_BOOL
 from infra.database import get_session
 from libs.datetime import utcnow
@@ -44,7 +46,7 @@ def login(
             session=session,
         )
 
-    access_token = create_access_token(
+    access_token = create_jwt_token(
         data={
             "sub": str(user.id),
             "team_id": str(user.team_id),
@@ -101,6 +103,22 @@ def logout(
     return response
 
 
+@router.post("/forgot-password", status_code=200)
+def forgot_password(
+    data: ForgotPasswordRequest,
+    session: Session = Depends(get_session),
+) -> str:
+    return service.send_reset_password_email(data.email, session)
+
+
+@router.post("/reset-password", status_code=200)
+def reset_password(
+    data: ResetPasswordRequest,
+    session: Session = Depends(get_session),
+) -> None:
+    service.reset_password(data, session)
+
+
 @router.post("/refresh", status_code=200)
 def refresh_access_token(
     refresh_token: str = Cookie(None),
@@ -148,7 +166,7 @@ def refresh_access_token(
 
     user = logged_user.user
 
-    access_token = create_access_token(
+    access_token = create_jwt_token(
         data={
             "sub": str(user.id),
             "team_id": str(user.team_id),
