@@ -1,4 +1,3 @@
-import yagmail
 from loguru import logger
 
 from api.htmls.intention_email import HTML_INTENTION_EMAIL
@@ -23,7 +22,7 @@ from bounded_contexts.user.exceptions import EmailAlreadyInUse
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
 from core.services.email import send_email
-from core.settings import APP_EMAIL_PASSWORD, APP_EMAIL, ENV_CONFIG
+from core.settings import ENV_CONFIG
 
 
 def create_team(team_data: TeamCreate, session: Session) -> Team:

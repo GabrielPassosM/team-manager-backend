@@ -1,3 +1,5 @@
+from datetime import date
+
 from bounded_contexts.team.models import Team, IntentionToSubscribe
 from bounded_contexts.team.schemas import (
     TeamCreate,
@@ -8,7 +10,7 @@ from bounded_contexts.user.models import User
 from core.repo import BaseRepo
 
 from uuid import UUID
-from sqlmodel import select
+from sqlmodel import select, update
 
 from libs.datetime import utcnow
 
@@ -43,6 +45,11 @@ class TeamWriteRepo(BaseRepo):
         self.session.refresh(team)
         return team
 
+    def save_without_commit(self, team: Team, current_user_id: UUID) -> None:
+        team.updated_at = utcnow()
+        team.updated_by = current_user_id
+        self.session.merge(team)
+
 
 class TeamReadRepo(BaseRepo):
     def get_by_id(self, team_id: UUID) -> Team:
@@ -52,6 +59,14 @@ class TeamReadRepo(BaseRepo):
                 Team.deleted == False,
             )
         ).first()
+
+    def get_by_ids(self, team_ids: list[UUID]) -> list[Team]:
+        return self.session.exec(
+            select(Team).where(  # type: ignore
+                Team.id.in_(team_ids),
+                Team.deleted == False,
+            )
+        ).all()
 
 
 class IntentionToSubscribeWriteRepo(BaseRepo):

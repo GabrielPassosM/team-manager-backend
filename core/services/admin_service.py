@@ -1,32 +1,34 @@
+from collections import defaultdict
 from datetime import date
 from uuid import UUID
 
 from bson import ObjectId
 from fastapi import HTTPException
-from pydantic import BaseModel
 from sqlmodel import Session
 
 from bounded_contexts.championship.repo import ChampionshipReadRepo
 from bounded_contexts.championship.schemas import ChampionshipCreate
 from bounded_contexts.championship.service import create_championship
+from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import (
     TeamWriteRepo,
     IntentionToSubscribeReadRepo,
     IntentionToSubscribeWriteRepo,
+    TeamReadRepo,
 )
-from bounded_contexts.team.schemas import TeamRegister, TeamCreate
+from bounded_contexts.team.schemas import (
+    TeamRegister,
+    TeamCreate,
+    RegisterTeamResponse,
+    RenewSubscriptionIn,
+    RenewSubscriptionResponse,
+)
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
 from bounded_contexts.user.schemas import UserCreate
 from bounded_contexts.user.service import create_user
 from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, SUPER_USER_PWD
-
-
-class RegisterTeamResponse(BaseModel):
-    team: UUID
-    super_user_email: str
-    client_user_email: str
-    friendly_championship: UUID
+from libs.datetime import add_months_to_date
 
 
 def register_new_team_and_create_base_models(
@@ -118,3 +120,23 @@ def register_new_team_and_create_base_models(
 
 def _generate_super_user_email(team_name: str) -> str:
     return f"superuser@{team_name[:30].lower().replace(" ", "")}.com"
+
+
+def renew_teams_subscription(
+    renew_data: RenewSubscriptionIn, session: Session, current_user_id: UUID
+) -> RenewSubscriptionResponse:
+    teams = TeamReadRepo(session).get_by_ids(renew_data.team_ids)
+    if not teams or len(teams) != len(renew_data.team_ids):
+        raise TeamNotFound()
+
+    renewed_info = defaultdict(list)
+    for team in teams:
+        new_paid_until = add_months_to_date(team.paid_until, renew_data.months)
+        team.paid_until = new_paid_until
+        TeamWriteRepo(session).save_without_commit(
+            team, current_user_id=current_user_id
+        )
+        renewed_info[new_paid_until].append(team.name)
+    session.commit()
+
+    return RenewSubscriptionResponse(renewed_info=renewed_info)

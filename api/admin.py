@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
-from bounded_contexts.team.schemas import TeamRegister
+import core.services.admin_service as service
+from bounded_contexts.team.schemas import (
+    TeamRegister,
+    RenewSubscriptionIn,
+    RegisterTeamResponse,
+    RenewSubscriptionResponse,
+)
 from bounded_contexts.user.models import User
 from core.exceptions import SuperAdminRequired
 from core.services import migrations_service
 from core.services.auth import validate_user_token
-from core.services.register_team_service import (
-    register_new_team_and_create_base_models,
-    RegisterTeamResponse,
-)
 from core.settings import MIGRATIONS_PWD
 from infra.database import get_session
 
@@ -40,4 +42,16 @@ async def register_new_team(
     if password != MIGRATIONS_PWD:
         raise HTTPException(status_code=401, detail="Invalid password")
 
-    return register_new_team_and_create_base_models(register_data, session)
+    return service.register_new_team_and_create_base_models(register_data, session)
+
+
+@router.post("/renew-subscription", status_code=200)
+async def renew_subscription(
+    renew_data: RenewSubscriptionIn,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> RenewSubscriptionResponse:
+    if not current_user.is_super_admin:
+        raise SuperAdminRequired()
+
+    return service.renew_teams_subscription(renew_data, session, current_user.id)
