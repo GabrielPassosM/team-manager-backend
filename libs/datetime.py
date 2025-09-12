@@ -13,19 +13,32 @@ def brasilia_now():
     return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
 
-def this_day_next_month(reference_date: date | None = None) -> date:
+def add_months_to_date(reference_date: date | None = None, months: int = 1) -> date:
+    """
+    Return de resulting date after adding a number of months to the reference date.
+
+    MUST NOT CHANGE THE DEFAULT VALUE OF MONTHS - used as default factory in Team.paid_until
+
+    :param reference_date: Base data for calculation. If None, we use the current date in Brasília timezone
+    :param months: Number of months to add (1-12)
+    :return: New date after adding the months
+    :raises ValueError: If months is not between 1 and 12
+    """
+    if months < 1 or months > 12:
+        raise ValueError("Months must be between 1 and 12")
+
     if not reference_date:
         reference_date = brasilia_now().date()
 
     year = reference_date.year
-    month = reference_date.month + 1
-    if month > 12:
-        month = 1
-        year += 1
+    month = reference_date.month + months
+
+    year += (month - 1) // 12
+    month = ((month - 1) % 12) + 1
 
     day = reference_date.day
-    last_day_of_next_month = calendar.monthrange(year, month)[1]
-    day = min(day, last_day_of_next_month)
+    last_day_of_target_month = calendar.monthrange(year, month)[1]
+    day = min(day, last_day_of_target_month)
 
     return date(year, month, day)
 

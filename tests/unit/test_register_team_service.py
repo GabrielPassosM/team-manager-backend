@@ -1,6 +1,6 @@
 import pytest
 
-from core.services.register_team_service import _generate_super_user_email
+from core.services.admin_service import _generate_super_user_email
 
 
 @pytest.mark.parametrize(

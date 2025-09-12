@@ -59,3 +59,34 @@ class IntentionToSubscribeCreate(BaseModel):
     user_email: str
     phone_number: str
     team_name: str
+
+
+class RegisterTeamResponse(BaseModel):
+    """
+    /admin/register-team
+    """
+
+    team: UUID
+    super_user_email: str
+    client_user_email: str
+    friendly_championship: UUID
+
+
+class RenewSubscriptionIn(BaseModel):
+    """
+    /admin/renew-subscription
+    """
+
+    team_ids: list[UUID]
+    months: int
+
+    @field_validator("months")
+    @classmethod
+    def validate_months(cls, v):
+        if v < 1 or v > 12:
+            raise ValueError("months must be between 1 and 12")
+        return v
+
+
+class RenewSubscriptionResponse(BaseModel):
+    renewed_info: dict[date, list[str]]
