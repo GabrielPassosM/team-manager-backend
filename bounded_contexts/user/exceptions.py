@@ -50,3 +50,9 @@ class CantDeleteYourself(HTTPException):
 class PlayerAlreadyHasUser(HTTPException):
     status_code = 400
     detail = "Este jogador já possui um usuário vinculado."
+
+
+@dataclass
+class UsersLimitReached(HTTPException):
+    status_code = 400
+    detail = "O número máximo de usuários do time foi atingido. Atualize seu plano para adicionar mais usuários."

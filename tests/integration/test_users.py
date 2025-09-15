@@ -36,6 +36,25 @@ def test_create_user(mock_team, mock_player_gen):
     UserResponse.model_validate(response_body)
 
 
+def test_error_create_user_max_users(mock_team_gen, mock_user_gen):
+    team = mock_team_gen(max_players_or_users=2)
+    team_id = team.id
+    mock_user_gen(team_id=team_id, is_admin=True)
+    mock_user_gen(team_id=team_id)
+
+    data = {
+        "name": "Dummy",
+        "email": f"{uuid4()}@fcb.com",
+        "password": "1234",
+    }
+    response = client.post("/users", json=data)
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "O número máximo de usuários do time foi atingido. Atualize seu plano para adicionar mais usuários."
+    )
+
+
 def test_error_create_user_with_long_password(mock_team):
     data = {
         "name": "Dummy",

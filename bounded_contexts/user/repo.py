@@ -7,6 +7,7 @@ from core.repo import BaseRepo
 
 from uuid import UUID
 from sqlmodel import select
+from sqlalchemy import func
 
 from core.services.password import hash_password
 from core.settings import REFRESH_TOKEN_EXPIRE_DAYS
@@ -217,3 +218,11 @@ class UserReadRepo(BaseRepo):
                 User.deleted == False,
             )
         ).first()
+
+    def count_by_team_id(self, team_id: UUID) -> int:
+        return self.session.exec(
+            select(func.count()).where(  # type: ignore
+                User.team_id == team_id,
+                User.deleted == False,
+            )
+        ).one()

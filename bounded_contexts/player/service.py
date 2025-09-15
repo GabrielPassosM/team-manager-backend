@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.game_and_stats.stats.service import delete_player_stats
-from bounded_contexts.player.exceptions import PlayerNotFound
+from bounded_contexts.player.exceptions import PlayerNotFound, PlayersLimitReached
 from bounded_contexts.player.models import Player
 from bounded_contexts.player.repo import PlayerReadRepo, PlayerWriteRepo
 from bounded_contexts.player.schemas import (
@@ -28,8 +28,14 @@ def create_player(
     if not current_user.has_admin_privileges and current_user.player_id:
         raise AdminRequired()
 
-    if not TeamReadRepo(session=session).get_by_id(current_user.team_id):
+    team_id = current_user.team_id
+    team = TeamReadRepo(session=session).get_by_id(team_id)
+    if not team:
         raise TeamNotFound()
+
+    team_players_count = PlayerReadRepo(session=session).count_by_team_id(team_id)
+    if team_players_count >= team.max_players_or_users:
+        raise PlayersLimitReached()
 
     player = PlayerWriteRepo(session=session).create(
         create_data, current_user.team_id, current_user.id
