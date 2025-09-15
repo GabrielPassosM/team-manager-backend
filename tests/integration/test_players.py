@@ -34,6 +34,28 @@ def test_create_player(mock_user):
     PlayerResponse.model_validate(response_body)
 
 
+def test_error_create_player_max_players(mock_team_gen, mock_user_gen, mock_player_gen):
+    team = mock_team_gen(max_players_or_users=2)
+    team_id = team.id
+    mock_user_gen(team_id=team_id, is_admin=True)
+    mock_player_gen(team_id=team_id)
+    mock_player_gen(team_id=team_id)
+
+    data = {
+        "name": "Ronaldinho",
+        "image_url": "https://example.com/image.jpg",
+        "shirt_number": 11,
+        "position": PlayerPositions.FIXO,
+    }
+
+    response = client.post("/players", json=data)
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "O número máximo de jogadores do time foi atingido. Atualize seu plano para adicionar mais jogadores."
+    )
+
+
 def test_create_player_for_non_admin_user(mock_user_gen, mock_player_gen):
     player = mock_player_gen()
 

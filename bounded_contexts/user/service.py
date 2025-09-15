@@ -16,6 +16,7 @@ from bounded_contexts.user.exceptions import (
     CantUpdateAdminUser,
     CantDeleteYourself,
     PlayerAlreadyHasUser,
+    UsersLimitReached,
 )
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.logged_user.models import LoggedUser
@@ -245,19 +246,25 @@ def reset_password(reset_data: ResetPasswordRequest, session: Session) -> None:
 
 
 def create_user(user_data: UserCreate, current_user: User, session: Session) -> User:
-    if not TeamReadRepo(session=session).get_by_id(current_user.team_id):
+    team_id = current_user.team_id
+    team = TeamReadRepo(session=session).get_by_id(team_id)
+    if not team:
         raise TeamNotFound()
-
-    if UserReadRepo(session=session).get_by_email(user_data.email):
-        raise EmailAlreadyInUse()
 
     if not current_user.is_super_admin and user_data.is_super_admin:
         raise SuperAdminRequired()
 
+    team_users_count = UserReadRepo(session=session).count_by_team_id(team_id)
+    if team_users_count >= team.max_players_or_users:
+        raise UsersLimitReached()
+
     if user_data.player_id and UserReadRepo(session=session).get_by_player_id(
-        current_user.team_id, user_data.player_id
+        team_id, user_data.player_id
     ):
         raise PlayerAlreadyHasUser()
+
+    if UserReadRepo(session=session).get_by_email(user_data.email):
+        raise EmailAlreadyInUse()
 
     hashed_password = hash_password(user_data.password)
 

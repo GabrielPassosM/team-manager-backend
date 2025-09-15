@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func
 from sqlmodel import select
 
 from bounded_contexts.player.models import Player
@@ -96,6 +97,14 @@ class PlayerReadRepo(BaseRepo):
                 Player.deleted == False,
             )
         ).all()
+
+    def count_by_team_id(self, team_id: UUID) -> int:
+        return self.session.exec(
+            select(func.count()).where(  # type: ignore
+                Player.team_id == team_id,
+                Player.deleted == False,
+            )
+        ).one()
 
     def get_by_filters(self, team_id: UUID, filter_data: PlayerFilter) -> list[Player]:
         query = (
