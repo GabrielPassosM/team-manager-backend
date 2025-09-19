@@ -1,4 +1,4 @@
-from uuid import uuid4
+from datetime import datetime
 
 from fastapi.testclient import TestClient
 
@@ -10,6 +10,8 @@ from bounded_contexts.player.schemas import (
     PlayerWithoutUserResponse,
     PlayerNameAndShirt,
 )
+from core.enums import StageOptions
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
 
 client = TestClient(app)
 
@@ -244,3 +246,150 @@ def test_get_players_name_and_shirt(mock_player_gen, mock_user):
     assert len(response_body) == 2
     assert response_body[0]["id"] == str(player2.id)
     PlayerNameAndShirt.model_validate(response_body[0])
+
+
+def test_get_players_filtered_by_stats(
+    mock_player_gen, mock_game_player_stat_gen, mock_championship_gen, mock_game_gen
+):
+    player1 = mock_player_gen(name="Player 1", position=PlayerPositions.MEIO_CAMPO)
+    player2 = mock_player_gen(name="Player 2", position=PlayerPositions.MEIO_CAMPO)
+    player3 = mock_player_gen(name="Player 3", position=PlayerPositions.ATACANTE)
+
+    champ1 = mock_championship_gen(
+        name="Championship 1", start_date=datetime(2022, 1, 1)
+    )
+    game = mock_game_gen(
+        championship_id=champ1.id,
+        adversary="Adversary 1",
+        date_hour=datetime(2022, 1, 21, 12, 0),
+        stage=StageOptions.SEMI_FINAL,
+    )
+
+    mock_game_player_stat_gen(
+        player_id=player1.id, stat=StatOptions.GOAL, quantity=1, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player2.id, stat=StatOptions.GOAL, quantity=2, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player3.id, stat=StatOptions.GOAL, quantity=3, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player1.id, stat=StatOptions.ASSIST, quantity=2, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player2.id, stat=StatOptions.ASSIST, quantity=3, game_id=game.id
+    )
+
+    mock_game_player_stat_gen(
+        player_id=player1.id, stat=StatOptions.PLAYED, quantity=1, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player2.id, stat=StatOptions.PLAYED, quantity=1, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player3.id, stat=StatOptions.PLAYED, quantity=1, game_id=game.id
+    )
+
+    champ_friendly = mock_championship_gen(name=FRIENDLY_CHAMPIONSHIP_NAME)
+    game = mock_game_gen(
+        championship_id=champ_friendly.id,
+        adversary="Adversary Friendly",
+        date_hour=datetime(2023, 1, 20, 15, 0),
+    )
+    mock_game_player_stat_gen(
+        player_id=player1.id, stat=StatOptions.GOAL, quantity=2, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player1.id, stat=StatOptions.ASSIST, quantity=2, game_id=game.id
+    )
+    mock_game_player_stat_gen(
+        player_id=player1.id, stat=StatOptions.PLAYED, quantity=1, game_id=game.id
+    )
+
+    # 1 - Order by Goals desc, and exclude friendly (default)
+    data = {
+        "stat_name": StatOptions.GOAL,
+    }
+    response = client.post("/players/stats-filter", json=data)
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 3
+    PlayerResponse.model_validate(response_body[0])
+    assert response_body[0]["id"] == str(player3.id)
+    assert response_body[0]["goals"] == 3
+    assert response_body[0]["played"] == 1
+    assert response_body[1]["id"] == str(player2.id)
+    assert response_body[1]["goals"] == 2
+    assert response_body[1]["played"] == 1
+    assert response_body[2]["id"] == str(player1.id)
+    assert response_body[2]["goals"] == 1  # friendly game excluded
+    assert response_body[2]["played"] == 1
+
+    # 2 - Count friendly, quantity range and order by asc
+    data = {
+        "stat_name": StatOptions.GOAL,
+        "order_by": "asc",
+        "quantity_range": {"min": 3, "max": 10},
+        "exclude_friendly": False,
+    }
+    response = client.post("/players/stats-filter", json=data)
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 2
+    # Order is asc. player1 has worse stats than player3 because he has more games
+    assert response_body[0]["id"] == str(player1.id)
+    assert response_body[0]["goals"] == 3
+    assert response_body[0]["played"] == 2  # friendly game included
+    assert response_body[1]["id"] == str(player3.id)
+    assert response_body[1]["goals"] == 3
+    assert response_body[1]["played"] == 1
+
+    # 3 - Date range and player position filters (also PLAYED stat)
+    data = {
+        "stat_name": StatOptions.PLAYED,
+        "date_range": {"start": "2022-01-15", "end": "2022-02-01"},
+        "player_positions": [PlayerPositions.MEIO_CAMPO],
+        "exclude_friendly": False,
+    }
+    response = client.post("/players/stats-filter", json=data)
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert response_body[0]["id"] == str(player1.id)
+    assert response_body[0]["played"] == 1
+    assert response_body[1]["id"] == str(player2.id)
+    assert response_body[1]["played"] == 1
+
+    # 4 - Championships, stages and specific players filters
+    data = {
+        "stat_name": StatOptions.ASSIST,
+        "order_by": "desc",
+        "championships": [str(champ1.id)],
+        "stages": [StageOptions.SEMI_FINAL],
+        "players": [str(player1.id), str(player2.id)],
+        "exclude_friendly": False,
+    }
+    response = client.post("/players/stats-filter", json=data)
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert response_body[0]["id"] == str(player2.id)
+    assert response_body[0]["assists"] == 3
+    assert response_body[0]["played"] == 1
+    assert response_body[1]["id"] == str(player1.id)
+    assert response_body[1]["assists"] == 2
+    assert response_body[1]["played"] == 1
+
+    # 5 - No players matching filters
+    data["stages"] = [StageOptions.FINAL]
+    response = client.post("/players/stats-filter", json=data)
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 0
+    assert response_body == []
