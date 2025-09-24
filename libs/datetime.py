@@ -1,12 +1,16 @@
 import calendar
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from zoneinfo import ZoneInfo
 
 from libs.base_types.interval import Interval
 
 
+UTC = timezone.utc
+BRT = timezone(timedelta(hours=-3))
+
+
 def utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def brasilia_now():
@@ -53,3 +57,7 @@ def current_month_range(reference_date: date | None = None) -> Interval:
     )
 
     return Interval(start=first_day, end=last_day)
+
+
+def date_to_datetime(d: date) -> datetime:
+    return datetime(d.year, d.month, d.day)

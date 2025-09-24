@@ -11,6 +11,7 @@ from bounded_contexts.player.schemas import (
     PlayerFilter,
     PlayerWithoutUserResponse,
     PlayerNameAndShirt,
+    PlayersStatsFilter,
 )
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
@@ -96,3 +97,14 @@ async def filter_players(
         return service.get_players_and_stats(current_user.team_id, session)
     else:
         return service.filter_players(current_user.team_id, filter_data, session)
+
+
+@router.post("/stats-filter", status_code=200)
+async def get_players_filtered_by_stats(
+    filter_data: PlayersStatsFilter,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> list[PlayerResponse]:
+    return service.get_players_filtered_by_stats(
+        filter_data, current_user.team_id, session
+    )

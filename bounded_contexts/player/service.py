@@ -3,7 +3,6 @@ from uuid import UUID
 from sqlmodel import Session
 
 from bounded_contexts.game_and_stats.models import StatOptions
-from bounded_contexts.game_and_stats.stats.service import delete_player_stats
 from bounded_contexts.player.exceptions import PlayerNotFound, PlayersLimitReached
 from bounded_contexts.player.models import Player
 from bounded_contexts.player.repo import PlayerReadRepo, PlayerWriteRepo
@@ -13,6 +12,7 @@ from bounded_contexts.player.schemas import (
     PlayerFilter,
     PlayerNameAndShirt,
     PlayerResponse,
+    PlayersStatsFilter,
 )
 from bounded_contexts.storage.service import delete_player_image_from_bucket
 from bounded_contexts.team.exceptions import TeamNotFound
@@ -141,7 +141,6 @@ def delete_player(player_id: UUID, session: Session, current_user: User) -> None
         delete_player_image_from_bucket(player_to_delete.image_url)
 
     try:
-        delete_player_stats(player_id, current_user.id, session)
         if player_to_delete.user:
             UserWriteRepo(session=session).remove_player_without_commit(
                 player_to_delete.user, current_user.id
@@ -164,3 +163,9 @@ def get_all_players_only_name_and_shirt(
     team_id: UUID, session: Session
 ) -> list[PlayerNameAndShirt]:
     return PlayerReadRepo(session=session).get_all_players_only_name_and_shirt(team_id)
+
+
+def get_players_filtered_by_stats(
+    filter_data: PlayersStatsFilter, team_id: UUID, session: Session
+) -> list[PlayerResponse]:
+    return PlayerReadRepo(session).get_players_filtered_by_stats(filter_data, team_id)
