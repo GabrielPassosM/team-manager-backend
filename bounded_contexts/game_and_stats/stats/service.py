@@ -152,16 +152,6 @@ def delete_game_stats(game_id: UUID, current_user_id: UUID, session: Session) ->
     GamePlayerStatWriteRepo(session).soft_delete_without_commit(stats, current_user_id)
 
 
-def delete_player_stats(
-    player_id: UUID, current_user_id: UUID, session: Session
-) -> None:
-    stats = GamePlayerStatReadRepo(session).get_by_player(player_id)
-    if not stats:
-        return
-
-    GamePlayerStatWriteRepo(session).soft_delete_without_commit(stats, current_user_id)
-
-
 def reactivate_game_stats(
     game_id: UUID, current_user_id: UUID, session: Session
 ) -> None:
