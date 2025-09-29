@@ -1,9 +1,14 @@
-from datetime import date
+from datetime import date, timedelta, datetime
 
 from fastapi.testclient import TestClient
 from api.main import app
 from bounded_contexts.team.schemas import RegisterTeamResponse
-from core.settings import MIGRATIONS_PWD
+from core.settings import (
+    MIGRATIONS_PWD,
+    FRIENDLY_CHAMPIONSHIP_NAME,
+    BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+)
+from libs.datetime import brasilia_now
 
 client = TestClient(app)
 
@@ -29,8 +34,22 @@ def test_register_team_full_flow(mock_user_gen):
 
     response_data = response.json()
     RegisterTeamResponse.model_validate(response_data)
-    assert response_data["client_user_email"] == data["user_email"]
-    assert response_data["super_user_email"] == "superuser@madureirafc.com"
+    assert response_data["team"]["name"] == "Madureira FC"
+    assert response_data["client_user"]["email"] == data["user_email"]
+    assert response_data["super_user"]["email"] == "superuser@madureirafc.com"
+    assert response_data["friendly_championship"]["name"] == FRIENDLY_CHAMPIONSHIP_NAME
+    assert response_data["friendly_championship"]["start_date"] == "1800-01-01"
+    assert (
+        response_data["before_system_championship"]["name"]
+        == BEFORE_SYSTEM_CHAMPIONSHIP_NAME
+    )
+    assert response_data["before_system_championship"]["start_date"] == "1800-01-01"
+    assert (
+        datetime.strptime(
+            response_data["before_system_championship"]["end_date"], "%Y-%m-%d"
+        ).date()
+        == (brasilia_now() - timedelta(days=1)).date()
+    )
 
 
 def test_renew_subscription(mock_user_gen, mock_team_gen):

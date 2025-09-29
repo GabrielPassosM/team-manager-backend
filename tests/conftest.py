@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from random import randint
 from uuid import uuid4, UUID
 
@@ -23,8 +23,9 @@ from bounded_contexts.user.models import User
 from bounded_contexts.user.logged_user.models import LoggedUser
 from core.services.auth import validate_user_token
 from core.services.password import hash_password
-from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 from infra.database import get_session
+from libs.datetime import brasilia_now
 from tests.database import (
     get_testing_session,
     init_test_db,
@@ -268,10 +269,37 @@ def mock_friendly_championship(db_session, mock_team):
     mock = Championship(
         team_id=mock_team.id,
         name=FRIENDLY_CHAMPIONSHIP_NAME,
-        start_date=date(2022, 11, 20),
-        end_date=date(2022, 12, 18),
-        is_league_format=False,
-        final_stage=StageOptions.CAMPEAO,
+        start_date=date(1800, 1, 1),
+        is_league_format=True,
+    )
+    db_session.add(mock)
+    db_session.commit()
+    db_session.refresh(mock)
+
+    yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_before_system_championship(db_session, mock_team):
+    before_system_champ = db_session.exec(
+        select(Championship).where(
+            Championship.name == BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+            Championship.team_id == mock_team.id,
+            Championship.deleted == False,
+        )
+    ).first()
+
+    if before_system_champ:
+        return before_system_champ
+
+    now = brasilia_now()
+
+    mock = Championship(
+        team_id=mock_team.id,
+        name=BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+        start_date=date(1800, 1, 1),
+        end_date=now.date() - timedelta(days=1),
+        is_league_format=True,
     )
     db_session.add(mock)
     db_session.commit()

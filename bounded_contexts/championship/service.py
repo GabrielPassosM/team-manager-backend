@@ -8,6 +8,8 @@ from bounded_contexts.championship.exceptions import (
     CantEditFriendlyChampionship,
     CantDeleteFriendlyChampionship,
     CantDeleteChampionshipWithGames,
+    CanOnlyEditEndDateBeforeSystemChampionship,
+    CantDeleteBeforeSystemChampionship,
 )
 from bounded_contexts.championship.models import Championship
 from bounded_contexts.championship.repo import (
@@ -24,7 +26,7 @@ from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
-from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 
 
 def create_championship(
@@ -71,6 +73,12 @@ def update_championship(
     if ChampionshipUpdate.model_validate(champ_to_update) == update_data:
         return champ_to_update
 
+    if (
+        champ_to_update.name == BEFORE_SYSTEM_CHAMPIONSHIP_NAME
+        and _changed_any_field_but_one(champ_to_update, update_data, "end_date")
+    ):
+        raise CanOnlyEditEndDateBeforeSystemChampionship()
+
     if champ_to_update.name != update_data.name and ChampionshipReadRepo(
         session=session
     ).get_by_name(update_data.name, current_user.team_id):
@@ -79,6 +87,17 @@ def update_championship(
     return ChampionshipWriteRepo(session=session).update(
         champ_to_update, update_data, current_user.id
     )
+
+
+def _changed_any_field_but_one(
+    champ: Championship, update_data: ChampionshipUpdate, field_name: str
+) -> bool:
+    champ_data = ChampionshipUpdate.model_validate(champ).model_dump()
+    update_data_dict = update_data.model_dump(exclude_unset=True)
+    for key, value in update_data_dict.items():
+        if key != field_name and champ_data.get(key) != value:
+            return True
+    return False
 
 
 def delete_championship(champ_id: UUID, current_user: User, session: Session) -> None:
@@ -91,6 +110,9 @@ def delete_championship(champ_id: UUID, current_user: User, session: Session) ->
 
     if champ_to_delete.name == FRIENDLY_CHAMPIONSHIP_NAME:
         raise CantDeleteFriendlyChampionship()
+
+    if champ_to_delete.name == BEFORE_SYSTEM_CHAMPIONSHIP_NAME:
+        raise CantDeleteBeforeSystemChampionship()
 
     games_count = GameReadRepo(session).count_games_by_championship(champ_id)
     if games_count:

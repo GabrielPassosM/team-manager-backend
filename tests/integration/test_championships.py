@@ -11,7 +11,7 @@ from bounded_contexts.championship.models import (
 )
 from core.enums import StageOptions
 from bounded_contexts.championship.schemas import ChampionshipResponse
-from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 
 client = TestClient(app)
 
@@ -152,6 +152,36 @@ def test_error_update_championship_friendly(mock_friendly_championship):
     )
 
 
+def test_error_update_championship_before_system(mock_before_system_championship):
+    before_champ = mock_before_system_championship
+
+    # 1 - ERROR updating fields
+    data = {
+        "name": "Editando",
+        "start_date": "2024-11-21",
+        "end_date": "2025-01-21",
+        "is_league_format": False,
+    }
+
+    response = client.patch(f"/championships/{str(before_champ.id)}", json=data)
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == f"Só é possível editar a data de término do campeonato {BEFORE_SYSTEM_CHAMPIONSHIP_NAME}"
+    )
+
+    # 2 - SUCCESS updating only end_date
+    data = {
+        "name": before_champ.name,
+        "start_date": before_champ.start_date.strftime("%Y-%m-%d"),
+        "end_date": "2025-01-21",
+        "is_league_format": before_champ.is_league_format,
+    }
+
+    response = client.patch(f"/championships/{str(before_champ.id)}", json=data)
+    assert response.status_code == 200
+
+
 def test_delete_championship(mock_championship):
     response = client.delete(f"/championships/{str(mock_championship.id)}")
     assert response.status_code == 204
@@ -163,6 +193,17 @@ def test_error_delete_championship_friendly(mock_friendly_championship):
     assert (
         response.json()["detail"]
         == f"Não é possível deletar o campeonato {FRIENDLY_CHAMPIONSHIP_NAME}"
+    )
+
+
+def test_error_delete_before_system_championship(mock_before_system_championship):
+    response = client.delete(
+        f"/championships/{str(mock_before_system_championship.id)}"
+    )
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == f"Não é possível deletar o campeonato {BEFORE_SYSTEM_CHAMPIONSHIP_NAME}"
     )
 
 

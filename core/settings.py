@@ -28,6 +28,7 @@ SUPER_USER_PWD = os.getenv("SUPER_USER_PWD")
 
 # Bussiness logic
 FRIENDLY_CHAMPIONSHIP_NAME = "Amistosos"
+BEFORE_SYSTEM_CHAMPIONSHIP_NAME = "Antes do Forquilha"
 
 # Email
 APP_EMAIL = os.getenv("APP_EMAIL")
