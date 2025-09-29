@@ -3,6 +3,8 @@ from datetime import date
 
 from fastapi import HTTPException
 
+from core.settings import BEFORE_SYSTEM_CHAMPIONSHIP_NAME
+
 
 @dataclass
 class GameDateOutsideChampionshipRange(HTTPException):
@@ -71,3 +73,11 @@ class UserNeedsAssociatedPlayer(HTTPException):
 class AvailabilityNotFound(HTTPException):
     status_code = 404
     detail = f"Disponibilidade não encontrada para o jogador no jogo selecionado."
+
+
+@dataclass
+class CantCreateGamesInBeforeSystemChampionship(HTTPException):
+    status_code = 400
+    detail = (
+        f"Não é possível criar jogos no campeonato {BEFORE_SYSTEM_CHAMPIONSHIP_NAME}."
+    )

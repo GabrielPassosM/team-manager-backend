@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, model_validator, field_validator
 
+from bounded_contexts.championship.schemas import ChampionshipResponse
+from bounded_contexts.user.schemas import UserResponse
 from core.consts import DEFAULT_PRIMARY_COLOR
 from core.schemas import BaseSchema
 
@@ -66,10 +68,11 @@ class RegisterTeamResponse(BaseModel):
     /admin/register-team
     """
 
-    team: UUID
-    super_user_email: str
-    client_user_email: str
-    friendly_championship: UUID
+    team: CurrentTeamResponse
+    super_user: UserResponse
+    client_user: UserResponse
+    friendly_championship: ChampionshipResponse
+    before_system_championship: ChampionshipResponse
 
 
 class RenewSubscriptionIn(BaseModel):

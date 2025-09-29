@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from uuid import uuid4
 
 from sqlmodel import select
@@ -17,8 +17,9 @@ from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
 from core.consts import DEMO_USER_EMAIL
 from core.services.password import hash_password
-from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 from infra.database import get_session
+from libs.datetime import brasilia_now
 
 
 def _populate() -> None:
@@ -48,6 +49,14 @@ def _populate() -> None:
             team_id=team1_id,
             name=FRIENDLY_CHAMPIONSHIP_NAME,
             start_date=date(1800, 1, 1),
+            is_league_format=True,
+        ),
+        Championship(
+            id=uuid4(),
+            team_id=team1_id,
+            name=BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+            start_date=date(1800, 1, 1),
+            end_date=(brasilia_now() - timedelta(days=1)).date(),
             is_league_format=True,
         ),
         Championship(
@@ -255,6 +264,14 @@ def _populate() -> None:
             team_id=team2_id,
             name=FRIENDLY_CHAMPIONSHIP_NAME,
             start_date=date(1800, 1, 1),
+            is_league_format=True,
+        ),
+        Championship(
+            id=uuid4(),
+            team_id=team2_id,
+            name=BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+            start_date=date(1800, 1, 1),
+            end_date=(brasilia_now() - timedelta(days=1)).date(),
             is_league_format=True,
         ),
         Championship(

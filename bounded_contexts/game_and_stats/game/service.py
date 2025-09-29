@@ -12,6 +12,7 @@ from bounded_contexts.game_and_stats.exceptions import (
     GameDateOutsideChampionshipRange,
     InvalidChampionshipFormat,
     GameNotFound,
+    CantCreateGamesInBeforeSystemChampionship,
 )
 from bounded_contexts.game_and_stats.game.repo import GameWriteRepo, GameReadRepo
 from bounded_contexts.game_and_stats.game.schemas import (
@@ -41,6 +42,7 @@ from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired, SuperAdminRequired
+from core.settings import BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 
 
 def create_game_and_stats(
@@ -58,6 +60,8 @@ def create_game_and_stats(
         not championship.is_league_format and create_data.round
     ):
         raise InvalidChampionshipFormat()
+    if championship.name == BEFORE_SYSTEM_CHAMPIONSHIP_NAME:
+        raise CantCreateGamesInBeforeSystemChampionship()
 
     game_date = create_data.date_hour.date()
     if not championship.date_is_within_championship(game_date):

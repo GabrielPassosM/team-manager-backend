@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 from uuid import UUID
 
 from bson import ObjectId
@@ -7,7 +7,10 @@ from fastapi import HTTPException
 from sqlmodel import Session
 
 from bounded_contexts.championship.repo import ChampionshipReadRepo
-from bounded_contexts.championship.schemas import ChampionshipCreate
+from bounded_contexts.championship.schemas import (
+    ChampionshipCreate,
+    ChampionshipResponse,
+)
 from bounded_contexts.championship.service import create_championship
 from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import (
@@ -22,13 +25,18 @@ from bounded_contexts.team.schemas import (
     RegisterTeamResponse,
     RenewSubscriptionIn,
     RenewSubscriptionResponse,
+    CurrentTeamResponse,
 )
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
-from bounded_contexts.user.schemas import UserCreate
+from bounded_contexts.user.schemas import UserCreate, UserResponse
 from bounded_contexts.user.service import create_user
-from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, SUPER_USER_PWD
-from libs.datetime import add_months_to_date
+from core.settings import (
+    FRIENDLY_CHAMPIONSHIP_NAME,
+    SUPER_USER_PWD,
+    BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+)
+from libs.datetime import add_months_to_date, brasilia_now
 
 
 def register_new_team_and_create_base_models(
@@ -93,7 +101,7 @@ def register_new_team_and_create_base_models(
         session=session,
     )
 
-    # 4 - Create Friendly championship
+    # 4 - Create default championships (friendly and before system)
     friendly_championship = ChampionshipReadRepo(session).get_by_name(
         FRIENDLY_CHAMPIONSHIP_NAME, team_created.id
     )
@@ -108,13 +116,33 @@ def register_new_team_and_create_base_models(
             session=session,
         )
 
+    before_system_championship = ChampionshipReadRepo(session).get_by_name(
+        BEFORE_SYSTEM_CHAMPIONSHIP_NAME, team_created.id
+    )
+    if not before_system_championship:
+        before_system_championship = create_championship(
+            create_data=ChampionshipCreate(
+                name=BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+                start_date=date(1800, 1, 1),
+                end_date=(brasilia_now() - timedelta(days=1)).date(),
+                is_league_format=True,
+            ),
+            current_user=super_user,
+            session=session,
+        )
+
     IntentionToSubscribeWriteRepo(session).delete(intention_data)
 
     return RegisterTeamResponse(
-        team=team_created.id,
-        super_user_email=super_user.email,
-        client_user_email=client_user.email,
-        friendly_championship=friendly_championship.id,
+        team=CurrentTeamResponse.model_validate(team_created),
+        super_user=UserResponse.model_validate(super_user),
+        client_user=UserResponse.model_validate(client_user),
+        friendly_championship=ChampionshipResponse.model_validate(
+            friendly_championship
+        ),
+        before_system_championship=ChampionshipResponse.model_validate(
+            before_system_championship
+        ),
     )
 
 

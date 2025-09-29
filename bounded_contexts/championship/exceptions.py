@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from fastapi import HTTPException
 
-from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 
 
 @dataclass
@@ -58,3 +58,15 @@ class CantDeleteChampionshipWithGames(HTTPException):
             self.detail += f" Existe {self.games_count} jogo nessa situação. Por favor, remova-o antes de tentar novamente."
         else:
             self.detail += f" Existem {self.games_count} jogos nessa situação. Por favor, remova-os antes de tentar novamente."
+
+
+@dataclass
+class CanOnlyEditEndDateBeforeSystemChampionship(HTTPException):
+    status_code = 400
+    detail = f"Só é possível editar a data de término do campeonato {BEFORE_SYSTEM_CHAMPIONSHIP_NAME}"
+
+
+@dataclass
+class CantDeleteBeforeSystemChampionship(HTTPException):
+    status_code = 400
+    detail = f"Não é possível deletar o campeonato {BEFORE_SYSTEM_CHAMPIONSHIP_NAME}"
