@@ -9,6 +9,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GameCreate,
     GameInfoIn,
     GameFilter,
+    GameBaseWithoutValidation,
 )
 from core.repo import BaseRepo
 from libs.base_types.interval import Interval
@@ -17,7 +18,10 @@ from libs.datetime import utcnow
 
 class GameWriteRepo(BaseRepo):
     def create_without_commit(
-        self, create_data: GameCreate, team_id: UUID, current_user_id: UUID
+        self,
+        create_data: GameCreate | GameBaseWithoutValidation,
+        team_id: UUID,
+        current_user_id: UUID,
     ) -> Game:
         create_data = create_data.model_dump()
         create_data["team_id"] = team_id

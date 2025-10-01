@@ -360,8 +360,8 @@ class PlayerReadRepo(BaseRepo):
                     played=played or 0,
                     goals=goals or 0,
                     assists=assists or 0,
-                    yellows=yellows or 0,
-                    reds=reds or 0,
+                    yellow_cards=yellows or 0,
+                    red_cards=reds or 0,
                     mvps=mvps or 0,
                 )
             )

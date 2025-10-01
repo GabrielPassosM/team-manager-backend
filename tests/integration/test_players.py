@@ -36,6 +36,47 @@ def test_create_player(mock_user):
     PlayerResponse.model_validate(response_body)
 
 
+def test_create_player_with_stats_before_system(
+    mock_user, mock_before_system_championship, mock_friendly_championship
+):
+    data = {
+        "name": "Ronaldinho",
+        "image_url": "https://example.com/image.jpg",
+        "shirt_number": 11,
+        "position": PlayerPositions.FIXO,
+        "played": 5,
+        "goals": 10,
+        "assists": 7,
+        "yellow_cards": 6,
+        "red_cards": 3,
+        "mvps": 9,
+    }
+
+    response = client.post("/players", json=data)
+    assert response.status_code == 201
+
+    player_response_body = response.json()
+    assert player_response_body["id"] is not None
+
+    # Check that stats were created
+    data_filter = {
+        "players": [str(player_response_body["id"])],
+    }
+    response = client.post("/players/stats-filter", json=data_filter)
+    assert response.status_code == 200
+
+    stats_response_body = response.json()
+    assert len(stats_response_body) == 1
+    stats_info = stats_response_body[0]
+    assert stats_info["id"] == player_response_body["id"]
+    assert stats_info["played"] == data["played"]
+    assert stats_info["goals"] == data["goals"]
+    assert stats_info["assists"] == data["assists"]
+    assert stats_info["yellow_cards"] == data["yellow_cards"]
+    assert stats_info["red_cards"] == data["red_cards"]
+    assert stats_info["mvps"] == data["mvps"]
+
+
 def test_error_create_player_max_players(mock_team_gen, mock_user_gen, mock_player_gen):
     team = mock_team_gen(max_players_or_users=2)
     team_id = team.id
@@ -91,7 +132,9 @@ def test_get_players(mock_player_gen, mock_game_player_stat_gen):
     player2 = mock_player_gen(name="A Player")
     player3 = mock_player_gen(name="C Player")
 
-    mock_game_player_stat_gen(player_id=player3.id, stat=StatOptions.GOAL)
+    mock_game_player_stat_gen(
+        player_id=player3.id, stat=StatOptions.YELLOW_CARD, quantity=2
+    )
 
     response = client.get("/players")
     assert response.status_code == 200
@@ -101,7 +144,7 @@ def test_get_players(mock_player_gen, mock_game_player_stat_gen):
     assert response_body[0]["id"] == str(player2.id)
     assert response_body[1]["id"] == str(player1.id)
     assert response_body[2]["id"] == str(player3.id)
-    assert response_body[2]["goals"] == 1
+    assert response_body[2]["yellow_cards"] == 2
     PlayerResponse.model_validate(response_body[0])
 
 

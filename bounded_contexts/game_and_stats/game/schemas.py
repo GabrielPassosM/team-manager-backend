@@ -13,6 +13,8 @@ class GoalAndAssist(BaseModel):
     goal_player_id: UUID | None  # None for own goals
     assist_player_id: UUID | None = None
 
+    ignore_goal: bool = False  # For before system stats
+
 
 class PlayerAndQuantity(BaseModel):
     player_id: UUID
@@ -53,8 +55,15 @@ class GameStatsIn(BaseModel):
     red_cards: list[UUID] | None = None
     mvps: list[PlayerAndQuantity] | None = None
 
+    is_before_system: bool | None = False
+    forced_played_quantity: int | None = None  # For before system stats
 
-class _GameBase(GameInfoIn, GameStatsIn):
+
+class GameBaseWithoutValidation(GameInfoIn, GameStatsIn):
+    deleted: bool | None = False
+
+
+class _GameBase(GameBaseWithoutValidation):
     @model_validator(mode="after")
     def make_validations_and_sanitize(self):
         if len(self.adversary) < 1 or len(self.adversary) > 255:

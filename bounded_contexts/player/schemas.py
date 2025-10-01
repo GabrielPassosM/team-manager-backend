@@ -5,27 +5,20 @@ from pydantic import BaseModel, field_validator
 from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.player.models import PlayerPositions
 from core.enums import StageOptions
-from core.schemas import BaseSchema
+from core.schemas import BaseSchema, StatsSchema
 from libs.schemas import NumberRangeSchema, DateRangeSchema
 
 
-class PlayerResponse(BaseSchema):
+class PlayerResponse(BaseSchema, StatsSchema):
     id: UUID
     name: str
     image_url: str | None = None
     shirt_number: int | None = None
     position: PlayerPositions
 
-    # Stats
-    played: int = 0
-    goals: int = 0
-    assists: int = 0
-    yellow_cards: int = 0
-    red_cards: int = 0
-    mvps: int = 0
 
-
-class PlayerCreate(BaseModel):
+class PlayerCreate(StatsSchema):
+    # TODO see why front is sending id
     id: UUID | None = None
     name: str
     image_url: str | None = None

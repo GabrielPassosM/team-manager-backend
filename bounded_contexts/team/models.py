@@ -5,14 +5,14 @@ from sqlmodel import Field, Relationship
 
 from core.consts import DEFAULT_PRIMARY_COLOR
 from core.models.base import BaseTable
-from libs.datetime import add_months_to_date
+from libs.datetime import add_or_subtract_months_to_date
 
 
 class Team(BaseTable, table=True):
     name: str = Field(min_length=1, max_length=255)
     emblem_url: str | None = Field(nullable=True, default=None)
     foundation_date: date | None = Field(nullable=True, default=None)
-    paid_until: date = Field(default_factory=add_months_to_date)
+    paid_until: date = Field(default_factory=add_or_subtract_months_to_date)
     max_players_or_users: int = Field(default=30)
     season_start_date: date | None = Field(nullable=True, default=None)
     season_end_date: date | None = Field(nullable=True, default=None)

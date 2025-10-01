@@ -34,18 +34,19 @@ class GamePlayerStatWriteRepo(BaseRepo):
             if goal_player_id and goal_player_id not in game_players_ids:
                 raise StatPlayerNotInGamePlayers()
 
-            goal_id = uuid4()
-            stats.append(
-                GamePlayerStat(
-                    id=goal_id,
-                    team_id=team_id,
-                    game_id=game_id,
-                    player_id=goal_player_id,
-                    stat=StatOptions.GOAL,
-                    quantity=1,
-                    created_by=current_user_id,
+            if not stat_data.ignore_goal:
+                goal_id = uuid4()
+                stats.append(
+                    GamePlayerStat(
+                        id=goal_id,
+                        team_id=team_id,
+                        game_id=game_id,
+                        player_id=goal_player_id,
+                        stat=StatOptions.GOAL,
+                        quantity=1,
+                        created_by=current_user_id,
+                    )
                 )
-            )
 
             if stat_data.assist_player_id:
                 stats.append(
@@ -70,6 +71,7 @@ class GamePlayerStatWriteRepo(BaseRepo):
         player_ids: list[UUID],
         current_user_id: UUID,
         game_players_ids: list[UUID] = None,
+        forced_quantity: int | None = None,
     ) -> None:
         stats = []
         for player_id in player_ids:
@@ -82,7 +84,7 @@ class GamePlayerStatWriteRepo(BaseRepo):
                     game_id=game_id,
                     player_id=player_id,
                     stat=stat_type,
-                    quantity=1,
+                    quantity=forced_quantity or 1,
                     created_by=current_user_id,
                 )
             )
@@ -97,12 +99,17 @@ class GamePlayerStatWriteRepo(BaseRepo):
         stats_data: list[PlayerAndQuantity],
         game_players_ids: list[UUID],
         current_user_id: UUID,
+        is_before_system: bool = False,
     ) -> None:
         stats = []
         for stat_data in stats_data:
             if stat_data.player_id not in game_players_ids:
                 raise StatPlayerNotInGamePlayers()
-            if stat_type == StatOptions.YELLOW_CARD and stat_data.quantity > 2:
+            if (
+                stat_type == StatOptions.YELLOW_CARD
+                and stat_data.quantity > 2
+                and not is_before_system
+            ):
                 raise InvalidYellowCardsQuantity()
 
             stats.append(

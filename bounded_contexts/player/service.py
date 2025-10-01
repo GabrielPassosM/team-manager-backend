@@ -1,7 +1,11 @@
 from uuid import UUID
 
+from loguru import logger
 from sqlmodel import Session
 
+from bounded_contexts.game_and_stats.game.service import (
+    create_before_system_game_and_stats,
+)
 from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.player.exceptions import PlayerNotFound, PlayersLimitReached
 from bounded_contexts.player.models import Player
@@ -20,11 +24,13 @@ from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserWriteRepo
 from core.exceptions import AdminRequired
+from core.schemas import StatsSchema
 
 
 def create_player(
     create_data: PlayerCreate, current_user: User, session: Session
 ) -> Player:
+    # Non admins can create only one player for themselves
     if not current_user.has_admin_privileges and current_user.player_id:
         raise AdminRequired()
 
@@ -44,7 +50,27 @@ def create_player(
         current_user.player_id = player.id
         UserWriteRepo(session).save(current_user, current_user.id)
 
+    stats = StatsSchema(**create_data.model_dump())
+    if _has_any_stats(stats) and current_user.has_admin_privileges:
+        try:
+            create_before_system_game_and_stats(player.id, stats, current_user, session)
+        except Exception as e:
+            logger.exception(f"Error creating before system stats: {e}")
+
     return player
+
+
+def _has_any_stats(stats_data: StatsSchema) -> bool:
+    return any(
+        [
+            stats_data.played > 0,
+            stats_data.goals > 0,
+            stats_data.assists > 0,
+            stats_data.yellow_cards > 0,
+            stats_data.red_cards > 0,
+            stats_data.mvps > 0,
+        ]
+    )
 
 
 def get_players_and_stats(
@@ -84,17 +110,17 @@ def _make_player_response(player: Player) -> PlayerResponse:
     played, goals, assists, yellows, reds, mvps = 0, 0, 0, 0, 0, 0
     for stat in player.game_player_stat:
         if stat.stat == StatOptions.PLAYED:
-            played += 1
+            played += stat.quantity
         elif stat.stat == StatOptions.GOAL:
-            goals += 1
+            goals += stat.quantity
         elif stat.stat == StatOptions.ASSIST:
-            assists += 1
+            assists += stat.quantity
         elif stat.stat == StatOptions.YELLOW_CARD:
-            yellows += 1
+            yellows += stat.quantity
         elif stat.stat == StatOptions.RED_CARD:
-            reds += 1
+            reds += stat.quantity
         elif stat.stat == StatOptions.MVP:
-            mvps += 1
+            mvps += stat.quantity
 
     return PlayerResponse(
         id=player.id,

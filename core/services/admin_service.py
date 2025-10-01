@@ -36,7 +36,7 @@ from core.settings import (
     SUPER_USER_PWD,
     BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
 )
-from libs.datetime import add_months_to_date, brasilia_now
+from libs.datetime import add_or_subtract_months_to_date, brasilia_now
 
 
 def register_new_team_and_create_base_models(
@@ -159,7 +159,9 @@ def renew_teams_subscription(
 
     renewed_info = defaultdict(list)
     for team in teams:
-        new_paid_until = add_months_to_date(team.paid_until, renew_data.months)
+        new_paid_until = add_or_subtract_months_to_date(
+            team.paid_until, renew_data.months
+        )
         team.paid_until = new_paid_until
         TeamWriteRepo(session).save_without_commit(
             team, current_user_id=current_user_id
