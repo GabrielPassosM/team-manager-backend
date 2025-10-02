@@ -16,6 +16,8 @@ class PlayerResponse(BaseSchema, StatsSchema):
     shirt_number: int | None = None
     position: PlayerPositions
 
+    has_before_system_stats: bool | None = None
+
 
 class PlayerCreate(StatsSchema):
     # TODO see why front is sending id
@@ -26,7 +28,7 @@ class PlayerCreate(StatsSchema):
     position: PlayerPositions
 
 
-class PlayerUpdate(BaseSchema):
+class PlayerUpdate(BaseSchema, StatsSchema):
     name: str | None = None
     image_url: str | None = None
     shirt_number: int | None = None

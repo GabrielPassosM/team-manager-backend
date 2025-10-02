@@ -428,6 +428,7 @@ def mock_game_player_stat_gen(db_session, mock_player, mock_team, mock_game):
         stat: StatOptions = StatOptions.PLAYED,
         quantity: int = 1,
         related_stat_id: UUID | None = None,
+        is_before_system: bool = False,
     ):
         mock = GamePlayerStat(
             team_id=team_id or mock_team.id,
@@ -436,6 +437,7 @@ def mock_game_player_stat_gen(db_session, mock_player, mock_team, mock_game):
             stat=stat,
             quantity=quantity,
             related_stat_id=related_stat_id,
+            is_before_system=is_before_system,
         )
         db_session.add(mock)
         db_session.commit()

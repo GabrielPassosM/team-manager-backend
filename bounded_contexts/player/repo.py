@@ -45,7 +45,8 @@ class PlayerWriteRepo(BaseRepo):
         for key, value in update_data.model_dump().items():
             if key == "id":
                 continue
-            setattr(player, key, value)
+            if hasattr(player, key):
+                setattr(player, key, value)
 
         player.updated_at = utcnow()
         player.updated_by = current_user_id
@@ -73,6 +74,12 @@ class PlayerWriteRepo(BaseRepo):
         player.updated_by = current_user_id
         self.session.merge(player)
         self.session.flush()
+
+    def save(self, player: Player, current_user_id: UUID) -> None:
+        player.updated_at = utcnow()
+        player.updated_by = current_user_id
+        self.session.merge(player)
+        self.session.commit()
 
 
 class PlayerReadRepo(BaseRepo):

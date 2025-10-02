@@ -54,23 +54,12 @@ def create_player(
     if _has_any_stats(stats) and current_user.has_admin_privileges:
         try:
             create_before_system_game_and_stats(player.id, stats, current_user, session)
+            player.has_before_system_stats = True
+            PlayerWriteRepo(session).save(player, current_user.id)
         except Exception as e:
             logger.exception(f"Error creating before system stats: {e}")
 
     return player
-
-
-def _has_any_stats(stats_data: StatsSchema) -> bool:
-    return any(
-        [
-            stats_data.played > 0,
-            stats_data.goals > 0,
-            stats_data.assists > 0,
-            stats_data.yellow_cards > 0,
-            stats_data.red_cards > 0,
-            stats_data.mvps > 0,
-        ]
-    )
 
 
 def get_players_and_stats(
@@ -106,8 +95,56 @@ def filter_players(
     return response_items
 
 
+def update_player(
+    player_id: UUID, update_data: PlayerUpdate, session: Session, current_user: User
+) -> PlayerResponse:
+    if not current_user.has_admin_privileges and current_user.player_id != player_id:
+        raise AdminRequired()
+
+    player_to_update = PlayerReadRepo(session=session).get_by_id(player_id)
+    if not player_to_update:
+        raise PlayerNotFound()
+
+    if PlayerUpdate.model_validate(player_to_update) == update_data:
+        return player_to_update
+
+    stats = StatsSchema(**update_data.model_dump())
+    if (
+        _has_any_stats(stats)
+        and current_user.has_admin_privileges
+        and not player_to_update.has_before_system_stats
+    ):
+        try:
+            create_before_system_game_and_stats(
+                player_to_update.id, stats, current_user, session
+            )
+            player_to_update.has_before_system_stats = True
+            PlayerWriteRepo(session).save(player_to_update, current_user.id)
+        except Exception as e:
+            logger.exception(f"Error creating before system stats: {e}")
+
+    player_updated = PlayerWriteRepo(session=session).update(
+        player_to_update, update_data, current_user.id
+    )
+    return _make_player_response(player_updated)
+
+
+def _has_any_stats(stats_data: StatsSchema) -> bool:
+    return any(
+        [
+            stats_data.played > 0,
+            stats_data.goals > 0,
+            stats_data.assists > 0,
+            stats_data.yellow_cards > 0,
+            stats_data.red_cards > 0,
+            stats_data.mvps > 0,
+        ]
+    )
+
+
 def _make_player_response(player: Player) -> PlayerResponse:
     played, goals, assists, yellows, reds, mvps = 0, 0, 0, 0, 0, 0
+
     for stat in player.game_player_stat:
         if stat.stat == StatOptions.PLAYED:
             played += stat.quantity
@@ -134,24 +171,7 @@ def _make_player_response(player: Player) -> PlayerResponse:
         yellow_cards=yellows,
         red_cards=reds,
         mvps=mvps,
-    )
-
-
-def update_player(
-    player_id: UUID, update_data: PlayerUpdate, session: Session, current_user: User
-) -> Player:
-    if not current_user.has_admin_privileges and current_user.player_id != player_id:
-        raise AdminRequired()
-
-    player_to_update = PlayerReadRepo(session=session).get_by_id(player_id)
-    if not player_to_update:
-        raise PlayerNotFound()
-
-    if PlayerUpdate.model_validate(player_to_update) == update_data:
-        return player_to_update
-
-    return PlayerWriteRepo(session=session).update(
-        player_to_update, update_data, current_user.id
+        has_before_system_stats=player.has_before_system_stats,
     )
 
 

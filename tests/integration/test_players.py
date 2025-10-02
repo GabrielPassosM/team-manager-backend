@@ -33,6 +33,7 @@ def test_create_player(mock_user):
     assert response_body["image_url"] == data["image_url"]
     assert response_body["shirt_number"] == data["shirt_number"]
     assert response_body["position"] == data["position"]
+    assert response_body["has_before_system_stats"] is False
     PlayerResponse.model_validate(response_body)
 
 
@@ -57,6 +58,7 @@ def test_create_player_with_stats_before_system(
 
     player_response_body = response.json()
     assert player_response_body["id"] is not None
+    assert player_response_body["has_before_system_stats"] is True
 
     # Check that stats were created
     data_filter = {
@@ -142,6 +144,7 @@ def test_get_players(mock_player_gen, mock_game_player_stat_gen):
     response_body = response.json()
     assert len(response_body) == 4  # the stat mock creates an extra player
     assert response_body[0]["id"] == str(player2.id)
+    assert response_body[0]["has_before_system_stats"] is False
     assert response_body[1]["id"] == str(player1.id)
     assert response_body[2]["id"] == str(player3.id)
     assert response_body[2]["yellow_cards"] == 2
@@ -170,6 +173,56 @@ def test_update_player(mock_player):
     assert response_body["image_url"] == update_data["image_url"]
     assert response_body["position"] == update_data["position"]
     PlayerResponse.model_validate(response_body)
+
+
+def test_add_before_system_stats_to_existing_player(
+    mock_player, mock_before_system_championship, mock_friendly_championship
+):
+    player_before_update = mock_player
+
+    update_data = {
+        "name": "New Name2",
+        "shirt_number": 10,
+        "image_url": "test_image_url2.jpg",
+        "position": PlayerPositions.PONTA,
+        "played": 3,
+        "goals": 5,
+        "assists": 2,
+        "yellow_cards": 2,
+        "red_cards": 2,
+        "mvps": 6,
+    }
+
+    response = client.patch(
+        f"/players/{str(player_before_update.id)}", json=update_data
+    )
+    assert response.status_code == 200
+
+    player_response_body = response.json()
+    assert player_response_body["id"] == str(player_before_update.id)
+    assert player_response_body["name"] == update_data["name"]
+    assert player_response_body["shirt_number"] == update_data["shirt_number"]
+    assert player_response_body["image_url"] == update_data["image_url"]
+    assert player_response_body["position"] == update_data["position"]
+    PlayerResponse.model_validate(player_response_body)
+
+    # Check that stats were created
+    data_filter = {
+        "players": [str(player_response_body["id"])],
+    }
+    response = client.post("/players/stats-filter", json=data_filter)
+    assert response.status_code == 200
+
+    stats_response_body = response.json()
+    assert len(stats_response_body) == 1
+    stats_info = stats_response_body[0]
+    assert stats_info["id"] == player_response_body["id"]
+    assert stats_info["played"] == update_data["played"]
+    assert stats_info["goals"] == update_data["goals"]
+    assert stats_info["assists"] == update_data["assists"]
+    assert stats_info["yellow_cards"] == update_data["yellow_cards"]
+    assert stats_info["red_cards"] == update_data["red_cards"]
+    assert stats_info["mvps"] == update_data["mvps"]
 
 
 def test_non_admin_user_update_player(mock_player_gen, mock_user_gen):

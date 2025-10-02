@@ -89,6 +89,7 @@ class GamePlayerStat(BaseTable, table=True):
     related_stat_id: UUID | None = Field(
         foreign_key="game_player_stat.id", nullable=True
     )
+    is_before_system: bool = Field(default=False)
 
     stat: str = Field(min_length=1, max_length=50)  # StatOptions
     quantity: int
