@@ -34,7 +34,8 @@ app = FastAPI(
 
 origins = [
     "http://localhost:5173",
-    "https://glistening-bubblegum-ed388d.netlify.app",
+    "https://forquilha.app.br",
+    "https://www.forquilha.app.br",
 ]
 app.add_middleware(
     CORSMiddleware,

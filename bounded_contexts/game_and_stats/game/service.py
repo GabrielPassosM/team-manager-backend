@@ -29,6 +29,7 @@ from bounded_contexts.game_and_stats.game.schemas import (
     GameFilter,
     NextGameResponse,
     LastGameResponse,
+    GameBaseWithoutValidation,
 )
 from bounded_contexts.game_and_stats.models import Game, StatOptions
 from bounded_contexts.game_and_stats.stats.repo import GamePlayerStatReadRepo
@@ -42,7 +43,9 @@ from bounded_contexts.team.exceptions import TeamNotFound
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired, SuperAdminRequired
+from core.schemas import StatsSchema
 from core.settings import BEFORE_SYSTEM_CHAMPIONSHIP_NAME
+from libs.datetime import date_to_datetime, add_or_subtract_months_to_date
 
 
 def create_game_and_stats(
@@ -326,3 +329,59 @@ def get_last_games(team_id: UUID, session: Session) -> list[LastGameResponse] | 
             )
         )
     return response_items
+
+
+def create_before_system_game_and_stats(
+    player_id: UUID, stats_data: StatsSchema, current_user: User, session: Session
+) -> UUID:
+    before_system_champ = ChampionshipReadRepo(session).get_by_name(
+        BEFORE_SYSTEM_CHAMPIONSHIP_NAME, current_user.team_id
+    )
+    if not before_system_champ:
+        raise ChampionshipNotFound()
+
+    goals = [GoalAndAssist(goal_player_id=player_id) for _ in range(stats_data.goals)]
+    assists = [
+        GoalAndAssist(goal_player_id=None, assist_player_id=player_id, ignore_goal=True)
+        for _ in range(stats_data.assists)
+    ]
+
+    game_data = GameBaseWithoutValidation(
+        championship_id=before_system_champ.id,
+        adversary=BEFORE_SYSTEM_CHAMPIONSHIP_NAME,  # same as championship name
+        date_hour=date_to_datetime(
+            add_or_subtract_months_to_date(before_system_champ.end_date, -12)
+        ),
+        team_score=stats_data.goals,
+        adversary_score=0,
+        players=[player_id],
+        goals_and_assists=goals + assists,
+        yellow_cards=(
+            [PlayerAndQuantity(player_id=player_id, quantity=stats_data.yellow_cards)]
+            if stats_data.yellow_cards > 0
+            else None
+        ),
+        red_cards=(
+            [player_id for _ in range(stats_data.red_cards)]
+            if stats_data.red_cards > 0
+            else None
+        ),
+        mvps=(
+            [PlayerAndQuantity(player_id=player_id, quantity=stats_data.mvps)]
+            if stats_data.mvps > 0
+            else None
+        ),
+        deleted=True,  # before system games are created as deleted
+        is_before_system=True,
+        forced_played_quantity=stats_data.played,
+    )
+
+    game = GameWriteRepo(session).create_without_commit(
+        game_data, current_user.team_id, current_user.id
+    )
+
+    stats_data = GameStatsIn(**game_data.model_dump())
+    create_game_stats(stats_data, game.id, current_user, session)
+
+    session.commit()
+    return game.id

@@ -5,27 +5,22 @@ from pydantic import BaseModel, field_validator
 from bounded_contexts.game_and_stats.models import StatOptions
 from bounded_contexts.player.models import PlayerPositions
 from core.enums import StageOptions
-from core.schemas import BaseSchema
+from core.schemas import BaseSchema, StatsSchema
 from libs.schemas import NumberRangeSchema, DateRangeSchema
 
 
-class PlayerResponse(BaseSchema):
+class PlayerResponse(BaseSchema, StatsSchema):
     id: UUID
     name: str
     image_url: str | None = None
     shirt_number: int | None = None
     position: PlayerPositions
 
-    # Stats
-    played: int = 0
-    goals: int = 0
-    assists: int = 0
-    yellow_cards: int = 0
-    red_cards: int = 0
-    mvps: int = 0
+    has_before_system_stats: bool | None = None
 
 
-class PlayerCreate(BaseModel):
+class PlayerCreate(StatsSchema):
+    # TODO see why front is sending id
     id: UUID | None = None
     name: str
     image_url: str | None = None
@@ -33,7 +28,7 @@ class PlayerCreate(BaseModel):
     position: PlayerPositions
 
 
-class PlayerUpdate(BaseSchema):
+class PlayerUpdate(BaseSchema, StatsSchema):
     name: str | None = None
     image_url: str | None = None
     shirt_number: int | None = None
@@ -91,6 +86,7 @@ class PlayersStatsFilter(BaseModel):
     championships: list[UUID] | None = None
     stages: list[StageOptions] | None = None
     exclude_friendly: bool = True
+    exclude_before_system: bool = False
 
     # Player related
     players: list[UUID] | None = None

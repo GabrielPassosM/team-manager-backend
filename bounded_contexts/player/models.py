@@ -36,6 +36,8 @@ class Player(BaseTable, table=True):
     shirt_number: int | None = Field(nullable=True, default=None)
     position: str  # PlayerPositions enum
 
+    has_before_system_stats: bool = Field(default=False)
+
     user: Optional["User"] = Relationship(back_populates="player")
 
     game_player_stat: list["GamePlayerStat"] = Relationship(

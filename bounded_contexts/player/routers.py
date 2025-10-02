@@ -72,10 +72,7 @@ async def update_player(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> PlayerResponse:
-    player_updated = service.update_player(
-        player_id, update_data, session, current_user
-    )
-    return PlayerResponse.model_validate(player_updated)
+    return service.update_player(player_id, update_data, session, current_user)
 
 
 @router.delete("/{player_id}", status_code=204)

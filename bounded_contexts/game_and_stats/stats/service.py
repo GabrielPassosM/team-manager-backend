@@ -37,8 +37,18 @@ def create_game_stats(
     team_id = current_user.team_id
     current_user_id = current_user.id
 
+    forced_played_quantity = None
+    if create_data.is_before_system:
+        forced_played_quantity = create_data.forced_played_quantity
+
     GamePlayerStatWriteRepo(session).create_single_quantity_stats_without_commit(
-        StatOptions.PLAYED, team_id, game_id, game_players_ids, current_user_id
+        StatOptions.PLAYED,
+        team_id,
+        game_id,
+        game_players_ids,
+        current_user_id,
+        create_data.is_before_system,
+        forced_quantity=forced_played_quantity,
     )
 
     if create_data.goals_and_assists:
@@ -48,6 +58,7 @@ def create_game_stats(
             create_data.goals_and_assists,
             game_players_ids,
             current_user_id,
+            create_data.is_before_system,
         )
 
     if create_data.yellow_cards:
@@ -60,6 +71,7 @@ def create_game_stats(
             create_data.yellow_cards,
             game_players_ids,
             current_user_id,
+            create_data.is_before_system,
         )
 
     if create_data.red_cards:
@@ -69,7 +81,8 @@ def create_game_stats(
             game_id,
             create_data.red_cards,
             current_user_id,
-            game_players_ids,
+            create_data.is_before_system,
+            game_players_ids=game_players_ids,
         )
 
     if create_data.mvps:
@@ -82,6 +95,7 @@ def create_game_stats(
             create_data.mvps,
             game_players_ids,
             current_user_id,
+            create_data.is_before_system,
         )
 
 
