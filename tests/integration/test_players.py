@@ -345,7 +345,11 @@ def test_get_players_name_and_shirt(mock_player_gen, mock_user):
 
 
 def test_get_players_filtered_by_stats(
-    mock_player_gen, mock_game_player_stat_gen, mock_championship_gen, mock_game_gen
+    mock_player_gen,
+    mock_game_player_stat_gen,
+    mock_championship_gen,
+    mock_game_gen,
+    mock_before_system_championship,
 ):
     player1 = mock_player_gen(name="Player 1", position=PlayerPositions.MEIO_CAMPO)
     player2 = mock_player_gen(name="Player 2", position=PlayerPositions.MEIO_CAMPO)
@@ -489,3 +493,32 @@ def test_get_players_filtered_by_stats(
     response_body = response.json()
     assert len(response_body) == 0
     assert response_body == []
+
+    # 6 - Exclude before system stats
+    game = mock_game_gen(
+        championship_id=mock_before_system_championship.id,
+        adversary="Adversary 2",
+        date_hour=datetime(2015, 1, 21, 12, 0),
+        stage=StageOptions.SEMI_FINAL,
+    )
+    mock_game_player_stat_gen(
+        player_id=player3.id, stat=StatOptions.ASSIST, quantity=1, game_id=game.id
+    )
+
+    # Default False
+    data = {"players": [str(player3.id)]}
+    response = client.post("/players/stats-filter", json=data)
+    assert response.status_code == 200
+    response_body1 = response.json()
+    assert len(response_body1) == 1
+    assert response_body1[0]["id"] == str(player3.id)
+    assert response_body1[0]["assists"] == 1
+
+    # Now True
+    data["exclude_before_system"] = True
+    response = client.post("/players/stats-filter", json=data)
+    assert response.status_code == 200
+    response_body1 = response.json()
+    assert len(response_body1) == 1
+    assert response_body1[0]["id"] == str(player3.id)
+    assert response_body1[0]["assists"] == 0

@@ -86,6 +86,7 @@ class PlayersStatsFilter(BaseModel):
     championships: list[UUID] | None = None
     stages: list[StageOptions] | None = None
     exclude_friendly: bool = True
+    exclude_before_system: bool = False
 
     # Player related
     players: list[UUID] | None = None

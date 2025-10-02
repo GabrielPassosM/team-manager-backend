@@ -18,7 +18,7 @@ from bounded_contexts.player.schemas import (
     PlayerResponse,
 )
 from core.repo import BaseRepo
-from core.settings import FRIENDLY_CHAMPIONSHIP_NAME
+from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 from libs.datetime import utcnow, BRT, UTC
 
 
@@ -319,11 +319,17 @@ class PlayerReadRepo(BaseRepo):
 
         if filter_data.championships:
             stmt = stmt.where(Game.championship_id.in_(filter_data.championships))
-        elif filter_data.exclude_friendly:
-            friendly = ChampionshipReadRepo(self.session).get_by_name(
-                FRIENDLY_CHAMPIONSHIP_NAME, team_id
-            )
-            stmt = stmt.where(Game.championship_id != friendly.id)
+        else:
+            if filter_data.exclude_friendly:
+                friendly = ChampionshipReadRepo(self.session).get_by_name(
+                    FRIENDLY_CHAMPIONSHIP_NAME, team_id
+                )
+                stmt = stmt.where(Game.championship_id != friendly.id)
+            if filter_data.exclude_before_system:
+                before_system = ChampionshipReadRepo(self.session).get_by_name(
+                    BEFORE_SYSTEM_CHAMPIONSHIP_NAME, team_id
+                )
+                stmt = stmt.where(Game.championship_id != before_system.id)
 
         if filter_data.stages:
             stages_values = [stg.value for stg in filter_data.stages]
