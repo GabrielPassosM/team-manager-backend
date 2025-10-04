@@ -411,3 +411,46 @@ def test_forgot_and_reset_password(mock_user_gen):
     response = client.post(f"/users/login", data=data)
     assert response.status_code == 200
     assert "access_token" in response.json()
+
+
+def test_first_access(mock_team_gen):
+    mock_team_gen(code="1TESTE")
+
+    # 1 - start first access
+    email = f"newuser{uuid4()}@test.com"
+    data = {
+        "email": email,
+        "team_code": "1TESTE",
+    }
+    response = client.post("/users/first-access-start", json=data)
+    assert response.status_code == 200
+    confirmation_link = response.json()
+    token = confirmation_link.split("token=")[-1]
+
+    # 2 - confirm first access with invalid token
+    data = {
+        "token": "invalid-token",
+        "user_name": "New User",
+        "password": "new-user-password",
+    }
+    response = client.post("/users/first-access-confirmation", json=data)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Token inválido ou expirado."
+
+    # 3 - confirm first access with valid token
+    data = {
+        "token": token,
+        "user_name": "New User",
+        "password": "new-password-123",
+    }
+    response = client.post("/users/first-access-confirmation", json=data)
+    assert response.status_code == 200
+
+    # 4 - login with new user
+    data = {
+        "username": email,
+        "password": "new-password-123",
+    }
+    response = client.post(f"/users/login", data=data)
+    assert response.status_code == 200
+    assert "access_token" in response.json()

@@ -38,13 +38,16 @@ def test_create_team(mock_user_gen):
 def test_get_current_team(mock_team):
     response = client.get(f"/teams/me")
     assert response.status_code == 200
-    assert response.json()["name"] == "FC Barcelona"
-    assert response.json()["emblem_url"] == "https://example.com/image.jpg"
-    assert response.json()["foundation_date"] == "2023-01-01"
-    assert response.json()["season_start_date"] == "2023-01-01"
+    assert response.json()["name"] == mock_team.name
+    assert response.json()["emblem_url"] == mock_team.emblem_url
+    assert response.json()["foundation_date"] == mock_team.foundation_date.isoformat()
+    assert (
+        response.json()["season_start_date"] == mock_team.season_start_date.isoformat()
+    )
     assert response.json()["season_end_date"] is None
-    assert response.json()["primary_color"] == "#FF0000"
+    assert response.json()["primary_color"] == mock_team.primary_color
     assert response.json()["paid_until"] is not None
+    assert response.json()["code"] == mock_team.code
 
 
 def test_update_current_team(mock_team):

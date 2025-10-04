@@ -1,3 +1,6 @@
+import random
+import string
+
 from loguru import logger
 
 from api.htmls.intention_email import HTML_INTENTION_EMAIL
@@ -26,7 +29,9 @@ from core.settings import ENV_CONFIG
 
 
 def create_team(team_data: TeamCreate, session: Session) -> Team:
-    return TeamWriteRepo(session=session).create(team_data)
+    codes_used = list(TeamReadRepo(session=session).get_all_codes())
+    new_code = team_code_generator(codes_used)
+    return TeamWriteRepo(session=session).create(team_data, new_code)
 
 
 def get_team_by_id(team_id: UUID, session: Session) -> Team:
@@ -93,3 +98,12 @@ def create_intention_to_subscribe(
         send_email(subject="NOVO CLIENTE !!", html=html_content)
     except Exception as e:
         logger.exception(f"Error sending intention to subscribe email: {e}")
+
+
+def team_code_generator(codes_used: list[str], length=6) -> str:
+    characters = string.ascii_uppercase + string.digits
+
+    while True:
+        code = "".join(random.choice(characters) for _ in range(length))
+        if code not in codes_used:
+            return code

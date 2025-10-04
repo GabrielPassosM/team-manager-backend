@@ -12,6 +12,8 @@ from bounded_contexts.user.schemas import (
     UserUpdate,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    FirstAccessStart,
+    FirstAccessConfirmation,
 )
 from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.auth import create_jwt_token, validate_user_token
@@ -44,6 +46,22 @@ def forgot_password(
     session: Session = Depends(get_session),
 ) -> str:
     return service.send_reset_password_email(data.email, session)
+
+
+@router.post("/first-access-start", status_code=200)
+def first_access_start(
+    data: FirstAccessStart,
+    session: Session = Depends(get_session),
+) -> str:
+    return service.make_user_first_access(data, session)
+
+
+@router.post("/first-access-confirmation", status_code=200)
+def first_access_confirmation(
+    data: FirstAccessConfirmation,
+    session: Session = Depends(get_session),
+) -> None:
+    return service.confirm_user_first_access(data, session)
 
 
 @router.post("/reset-password", status_code=200)

@@ -21,7 +21,7 @@ class _InvalidAccessToken(HTTPException):
 
 
 @dataclass
-class _InvalidToken(HTTPException):
+class InvalidToken(HTTPException):
     status_code = 400
     detail = "Token inválido ou expirado."
 
@@ -56,9 +56,16 @@ def validate_user_token(
     return user
 
 
-def general_validade_token(token: str):
+def general_validade_token(
+    token: str, ignore_exp: bool = False, raise_custom_error: bool = True
+) -> str:
+    options = {"verify_exp": False} if ignore_exp else {}
     try:
-        payload = jwt.decode(token, JWT_KEY, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(
+            token, JWT_KEY, algorithms=[JWT_ALGORITHM], options=options
+        )
         return payload["sub"]
-    except JWTError:
-        raise _InvalidToken()
+    except Exception:
+        if raise_custom_error:
+            raise InvalidToken()
+        raise

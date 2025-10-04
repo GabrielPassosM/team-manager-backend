@@ -17,6 +17,7 @@ class Team(BaseTable, table=True):
     season_start_date: date | None = Field(nullable=True, default=None)
     season_end_date: date | None = Field(nullable=True, default=None)
     primary_color: str | None = Field(nullable=True, default=DEFAULT_PRIMARY_COLOR)
+    code: str = Field(nullable=True, min_length=6, max_length=255, unique=True)
 
     # Only so the backwards relation works (user.team)
     users: Optional["User"] = Relationship(
