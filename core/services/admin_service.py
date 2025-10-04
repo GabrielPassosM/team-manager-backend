@@ -27,6 +27,7 @@ from bounded_contexts.team.schemas import (
     RenewSubscriptionResponse,
     CurrentTeamResponse,
 )
+from bounded_contexts.team.service import team_code_generator
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
 from bounded_contexts.user.schemas import UserCreate, UserResponse
@@ -52,8 +53,10 @@ def register_new_team_and_create_base_models(
             detail="No intention to subscribe found for this email.",
         )
 
+    codes_used = list(TeamReadRepo(session=session).get_all_codes())
+    new_code = team_code_generator(codes_used)
     team_created = TeamWriteRepo(session=session).create(
-        TeamCreate(name=intention_data.team_name)
+        TeamCreate(name=intention_data.team_name), new_code
     )
 
     if not team_created:

@@ -55,6 +55,17 @@ class ForgotPasswordRequest(BaseModel):
     email: str
 
 
+class FirstAccessStart(BaseModel):
+    email: str
+    team_code: str
+
+
+class FirstAccessConfirmation(BaseModel):
+    token: str
+    user_name: str
+    password: str
+
+
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str

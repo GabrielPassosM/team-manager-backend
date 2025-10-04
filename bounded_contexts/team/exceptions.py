@@ -10,6 +10,12 @@ class TeamNotFound(HTTPException):
 
 
 @dataclass
+class TeamNotFoundByCode(HTTPException):
+    status_code = 404
+    detail = "Time não encontrado no sistema. Por favor, verifique o código e tente novamente."
+
+
+@dataclass
 class TeamSubscriptionExpired(HTTPException):
     status_code = 403
     detail = "A assinatura do time expirou."

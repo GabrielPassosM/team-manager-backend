@@ -125,6 +125,7 @@ def mock_team_gen(db_session, mock_team):
         season_start_date: date = None,
         season_end_date: date = None,
         primary_color: str = None,
+        code: str = None,
     ):
         mock = Team(
             name=name or "FC Barcelona",
@@ -135,6 +136,7 @@ def mock_team_gen(db_session, mock_team):
             season_start_date=season_start_date,
             season_end_date=season_end_date,
             primary_color=primary_color or "#FF0000",
+            code=code,
         )
         db_session.add(mock)
         db_session.commit()

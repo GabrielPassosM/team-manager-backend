@@ -16,13 +16,18 @@ from libs.datetime import utcnow
 
 class UserWriteRepo(BaseRepo):
     def create(
-        self, user_data: UserCreate, current_user: User, hashed_password: str
+        self,
+        user_data: UserCreate,
+        hashed_password: str,
+        current_user: User = None,
+        team_id: UUID = None,
     ) -> User:
         user_data = user_data.model_dump()
-        user_data["team_id"] = current_user.team_id
+        user_data["team_id"] = team_id if team_id else current_user.team_id
         user_data["hashed_password"] = hashed_password
         user_data.pop("password")
-        user_data["created_by"] = current_user.id
+        if current_user:
+            user_data["created_by"] = current_user.id
 
         user = User(**user_data)
         self.session.add(user)

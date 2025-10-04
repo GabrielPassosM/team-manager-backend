@@ -256,7 +256,7 @@ def _populate() -> None:
     team2_mocks = [
         Team(
             id=team2_id,
-            name="Tribunata",
+            name="Tribunata FC",
             foundation_date=date(1899, 11, 29),
             season_start_date=date(2023, 1, 1),
         ),
@@ -318,7 +318,7 @@ def _populate() -> None:
         User(
             team_id=team2_id,
             name="Super User",
-            email="superuser@tribunata.com",
+            email="superuser@tribunatafc.com",
             hashed_password=hash_password("1234"),
             is_super_admin=True,
         ),

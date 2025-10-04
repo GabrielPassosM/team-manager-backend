@@ -16,8 +16,10 @@ from libs.datetime import utcnow
 
 
 class TeamWriteRepo(BaseRepo):
-    def create(self, team_data: TeamCreate) -> Team:
-        team = Team(**team_data.model_dump())
+    def create(self, team_data: TeamCreate, code: str) -> Team:
+        team_data = team_data.model_dump()
+        team_data["code"] = code
+        team = Team(**team_data)
         self.session.add(team)
         self.session.commit()
         self.session.refresh(team)
@@ -67,6 +69,17 @@ class TeamReadRepo(BaseRepo):
                 Team.deleted == False,
             )
         ).all()
+
+    def get_all_codes(self) -> list[str]:
+        return self.session.exec(select(Team.code)).all()
+
+    def get_by_code(self, code: str) -> Team | None:
+        return self.session.exec(
+            select(Team).where(  # type: ignore
+                Team.code == code,
+                Team.deleted == False,
+            )
+        ).first()
 
 
 class IntentionToSubscribeWriteRepo(BaseRepo):

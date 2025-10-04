@@ -3,11 +3,16 @@ from datetime import timedelta
 from uuid import UUID
 
 from bson import ObjectId
+from jose import ExpiredSignatureError
 from sqlmodel import Session
 from loguru import logger
 from starlette.responses import JSONResponse
 
-from bounded_contexts.team.exceptions import TeamNotFound, TeamSubscriptionExpired
+from bounded_contexts.team.exceptions import (
+    TeamNotFound,
+    TeamSubscriptionExpired,
+    TeamNotFoundByCode,
+)
 from bounded_contexts.team.repo import TeamReadRepo
 from bounded_contexts.user.exceptions import (
     UserNotFound,
@@ -27,10 +32,12 @@ from bounded_contexts.user.schemas import (
     ResetPasswordRequest,
     LoginResponse,
     UserResponse,
+    FirstAccessStart,
+    FirstAccessConfirmation,
 )
 from core.consts import DEMO_USER_EMAIL
 from core.exceptions import AdminRequired, SuperAdminRequired
-from core.services.auth import create_jwt_token, general_validade_token
+from core.services.auth import create_jwt_token, general_validade_token, InvalidToken
 from core.services.email import send_email
 from core.services.password import verify_password, hash_password
 from core.settings import (
@@ -245,6 +252,83 @@ def reset_password(reset_data: ResetPasswordRequest, session: Session) -> None:
         logger.exception(f"Error sending password reseted email: {e}")
 
 
+def make_user_first_access(data: FirstAccessStart, session: Session) -> str:
+    team = TeamReadRepo(session=session).get_by_code(data.team_code)
+    if not team:
+        raise TeamNotFoundByCode()
+
+    team_users_count = UserReadRepo(session=session).count_by_team_id(team.id)
+    if team_users_count >= team.max_players_or_users:
+        raise UsersLimitReached()
+
+    if UserReadRepo(session=session).get_by_email(data.email):
+        raise EmailAlreadyInUse()
+
+    user_data = UserCreate(
+        name="Temporário",
+        email=data.email,
+        password=str(ObjectId()),
+    )
+
+    hashed_password = hash_password(user_data.password)
+    user_created = UserWriteRepo(session=session).create(
+        user_data, hashed_password, team_id=team.id
+    )
+
+    token = create_jwt_token(
+        data={
+            "sub": str(user_created.id),
+            "team_id": str(user_created.team_id),
+        },
+        expires_delta=timedelta(hours=1),
+    )
+    confirm_link = f"{FRONTEND_URL}/first-access-confirmation?token={token}"
+
+    if "test" not in ENV_CONFIG:
+        send_email(
+            to=data.email,
+            subject="Primeiro acesso - Forquilha",
+            body=f"Olá, uma conta foi criada para você na plataforma Forquilha. Para definir sua senha e finalizar a configuração, clique no link abaixo:<br><br><a href='{confirm_link}'>Finalizar configuração da conta</a><br><br>",
+        )
+
+    return confirm_link
+
+
+def confirm_user_first_access(data: FirstAccessConfirmation, session: Session) -> None:
+    try:
+        user_id = general_validade_token(data.token, raise_custom_error=False)
+    except ExpiredSignatureError:
+        user_id = general_validade_token(
+            data.token, ignore_exp=True, raise_custom_error=False
+        )
+        user = UserReadRepo(session).get_by_id(user_id)
+        if user:
+            UserWriteRepo(session).delete(user)
+        raise InvalidToken()
+    except Exception:
+        raise InvalidToken()
+
+    user = UserReadRepo(session).get_by_id(user_id)
+    if not user:
+        raise UserNotFound()
+
+    user.hashed_password = hash_password(data.password)
+    user.name = data.user_name
+    UserWriteRepo(session).save(user, user.id)
+
+    if "test" in ENV_CONFIG:
+        return
+
+    try:
+        send_email(
+            to=user.email,
+            subject="Conta configurada com sucesso - Forquilha",
+            body=f"Bem-vindo(a) ao <a href='{FRONTEND_URL}'>Forquilha</a>, {user.name}! Sua conta foi configurada com sucesso e você já pode usar a plataforma!",
+        )
+    except Exception as e:
+        logger.exception(f"Error sending password reseted email: {e}")
+
+
 def create_user(user_data: UserCreate, current_user: User, session: Session) -> User:
     team_id = current_user.team_id
     team = TeamReadRepo(session=session).get_by_id(team_id)
@@ -269,7 +353,7 @@ def create_user(user_data: UserCreate, current_user: User, session: Session) -> 
     hashed_password = hash_password(user_data.password)
 
     return UserWriteRepo(session=session).create(
-        user_data, current_user, hashed_password
+        user_data, hashed_password, current_user
     )
 
 
