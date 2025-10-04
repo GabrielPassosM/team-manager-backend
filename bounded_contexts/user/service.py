@@ -211,6 +211,9 @@ def send_reset_password_email(email: str, session: Session) -> str:
     if not user:
         raise UserNotFound()
 
+    if user.is_super_admin:
+        raise UserNotFound()
+
     token = create_jwt_token(
         data={
             "sub": str(user.id),

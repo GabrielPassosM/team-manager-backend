@@ -45,6 +45,7 @@ class TeamUpdate(_TeamBase):
 
 class CurrentTeamResponse(BaseSchema, _TeamBase):
     paid_until: date
+    code: str | None
 
 
 class TeamRegister(BaseModel):
