@@ -137,7 +137,7 @@ def get_game_stats(game_id: UUID, session: Session) -> GameStatsResponse:
             players.append([position, shirt_number, player_name])
 
     mvps = sorted(mvps, key=lambda item: item[1], reverse=True)
-    players = sorted(players, key=lambda item: item[1])
+    players = sorted(players, key=lambda item: item[-1])
 
     return GameStatsResponse(
         players=players,
