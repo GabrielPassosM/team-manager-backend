@@ -59,6 +59,9 @@ class UserWriteRepo(BaseRepo):
         if password:
             update_data["hashed_password"] = hash_password(password)
 
+        if update_data["is_admin"] is None:
+            update_data.pop("is_admin")
+
         for key, value in update_data.items():
             if key == "id":
                 continue

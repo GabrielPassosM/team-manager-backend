@@ -28,6 +28,7 @@ class UserUpdate(BaseModel):
     email: str
     password: str | None = None
     player_id: UUID | None = None
+    is_admin: bool | None = None
 
 
 class UserPlayer(BaseSchema):

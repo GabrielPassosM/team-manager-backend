@@ -31,19 +31,19 @@ class LoginUnauthorized(HTTPException):
 @dataclass
 class CantUpdateAdminUser(HTTPException):
     status_code = 403
-    detail = "Não é permitido atualizar outro usuário admin. Qualquer dúvida, entre em contato com o suporte técnico."
+    detail = "Não é permitido atualizar outro usuário admin. Qualquer dúvida, entre em contato com o suporte."
 
 
 @dataclass
 class CantDeleteAdminUser(HTTPException):
     status_code = 403
-    detail = "Não é permitido remover outro usuário admin. Qualquer dúvida, entre em contato com o suporte técnico."
+    detail = "Não é permitido remover outro usuário admin. Qualquer dúvida, entre em contato com o suporte."
 
 
 @dataclass
 class CantDeleteYourself(HTTPException):
     status_code = 403
-    detail = "Não é permitido remover seu próprio usuário. Qualquer dúvida, entre em contato com o suporte técnico."
+    detail = "Não é permitido remover seu próprio usuário. Qualquer dúvida, entre em contato com o suporte."
 
 
 @dataclass
@@ -56,3 +56,9 @@ class PlayerAlreadyHasUser(HTTPException):
 class UsersLimitReached(HTTPException):
     status_code = 400
     detail = "O número máximo de usuários do time foi atingido. Atualize seu plano para adicionar mais usuários."
+
+
+@dataclass
+class CantRevokeOwnAdmin(HTTPException):
+    status_code = 403
+    detail = "Você não pode remover sua própria permissão de administrador. Caso realmente deseje fazer isso, entre em contato com o suporte."

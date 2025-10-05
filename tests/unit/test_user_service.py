@@ -2,7 +2,11 @@ from uuid import uuid4
 
 import pytest
 
-from bounded_contexts.user.exceptions import CantUpdateAdminUser, CantDeleteYourself
+from bounded_contexts.user.exceptions import (
+    CantUpdateAdminUser,
+    CantDeleteYourself,
+    CantRevokeOwnAdmin,
+)
 from bounded_contexts.user.schemas import UserUpdate
 from bounded_contexts.user.service import (
     _validate_update_request,
@@ -44,6 +48,20 @@ class _UserTest:
             UserUpdate(name="Test", email="teste@gmail", password="1234"),
             None,
         ),
+        # Non-admin trying to update his own player_id → should fail
+        (
+            _UserTest(id=1),
+            _UserTest(id=1),
+            UserUpdate(name="Test", email="teste@gmail", player_id=uuid4()),
+            AdminRequired,
+        ),
+        # Non-admin trying to update his own is_admin → should fail
+        (
+            _UserTest(id=1),
+            _UserTest(id=1),
+            UserUpdate(name="Test", email="teste@gmail", is_admin=True),
+            AdminRequired,
+        ),
         # Non-admin trying to update another (without password) → should fail
         (
             _UserTest(id=1),
@@ -79,12 +97,12 @@ class _UserTest:
             UserUpdate(name="Test", email="teste@gmail"),
             CantUpdateAdminUser,
         ),
-        # Non-admin trying to update player_id → should fail
+        # Admin trying to revoke his own admin status → should fail
         (
-            _UserTest(id=1),
-            _UserTest(id=2),
-            UserUpdate(name="Test", email="teste@gmail", player_id=uuid4()),
-            AdminRequired,
+            _UserTest(id=1, is_admin=True),
+            _UserTest(id=1, is_admin=True),
+            UserUpdate(name="Test", email="teste@gmail", is_admin=False),
+            CantRevokeOwnAdmin,
         ),
     ],
 )
