@@ -1,6 +1,6 @@
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from bounded_contexts.player import service
@@ -16,48 +16,19 @@ from bounded_contexts.player.schemas import (
 from bounded_contexts.user.models import User
 from core.exceptions import AdminRequired
 from core.services.auth import validate_user_token
-from core.services.email import send_email
 from infra.database import get_session
 
 router = APIRouter(prefix="/players", tags=["Player"])
 
 
-# @router.post("/", status_code=201)
-# async def create_player(
-#     create_data: PlayerCreate,
-#     session: Session = Depends(get_session),
-#     current_user: User = Depends(validate_user_token),
-# ) -> PlayerResponse:
-#     player = service.create_player(create_data, current_user, session)
-#     return PlayerResponse.model_validate(player)
-
-
-@router.post("/")
-async def seu_endpoint(request: Request):
-    email_content = "Request recebido. "
-
-    try:
-        body_bytes = await request.body()
-        if not body_bytes:
-            email_content += "\nCorpo da requisição está vazio. "
-            send_email(subject="Debug erro Safari", body=email_content)
-
-        body_json = await request.json()
-        email_content += f"\nCorpo da requisição JSON: {body_json} "
-
-        return PlayerResponse(id=uuid4(), name="Teste", position="GOALKEEPER")
-
-    except Exception as e:
-        email_content += f"\nErro ao processar a requisição: {e} "
-        try:
-            body_bytes = await request.body()
-            email_content += f"\nCorpo bruto recebido (pode não ser JSON): {body_bytes.decode('utf-8')} "
-        except:
-            email_content += "\nNão foi possível ler o corpo da requisição. "
-
-        send_email(subject="Debug erro Safari", body=email_content)
-
-        raise Exception("Chegou no finalzinho")
+@router.post("/", status_code=201)
+async def create_player(
+    create_data: PlayerCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+) -> PlayerResponse:
+    player = service.create_player(create_data, current_user, session)
+    return PlayerResponse.model_validate(player)
 
 
 @router.get("/", status_code=200)
