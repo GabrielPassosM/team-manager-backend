@@ -22,6 +22,7 @@ from bounded_contexts.user.exceptions import (
     CantDeleteYourself,
     PlayerAlreadyHasUser,
     UsersLimitReached,
+    CantRevokeOwnAdmin,
 )
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.logged_user.models import LoggedUser
@@ -389,6 +390,7 @@ def update_user(
             user_to_update.name == update_data.name,
             user_to_update.email == update_data.email,
             user_to_update.player_id == update_data.player_id,
+            user_to_update.is_admin == update_data.is_admin,
         ]
     ):
         return user_to_update
@@ -401,23 +403,34 @@ def update_user(
 def _validate_update_request(
     current_user: User, user_to_update: User, update_data: UserUpdate
 ) -> None:
-    if update_data.player_id and not current_user.has_admin_privileges:
-        raise AdminRequired()
-
-    if current_user.is_super_admin or current_user.id == user_to_update.id:
+    if current_user.is_super_admin:
         return
 
-    # Cannot update other users' passwords
-    if update_data.password:
-        raise AdminRequired()
+    # ---- Non admin users ----
+    if not current_user.has_admin_privileges:
+        if current_user.id != user_to_update.id:
+            raise AdminRequired()
+        if update_data.player_id:
+            raise AdminRequired()
+        if update_data.is_admin is True:
+            raise AdminRequired()
+        return
 
-    # Cannot update other user if not admin
-    if not current_user.is_admin:
-        raise AdminRequired()
+    # ---- Admin users ----
 
-    # Only super admin can update other admin
-    if user_to_update.is_admin:
+    # Editing own user
+    if current_user.id == user_to_update.id:
+        if update_data.is_admin is False:
+            raise CantRevokeOwnAdmin()
+        return
+
+    # Editing other users
+    if user_to_update.has_admin_privileges:
         raise CantUpdateAdminUser()
+
+    if update_data.password:
+        # Cannot update other users' passwords
+        raise AdminRequired()
 
 
 def get_user_by_id(user_id: UUID, session: Session) -> User:
