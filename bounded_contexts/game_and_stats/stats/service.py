@@ -41,15 +41,16 @@ def create_game_stats(
     if create_data.is_before_system:
         forced_played_quantity = create_data.forced_played_quantity
 
-    GamePlayerStatWriteRepo(session).create_single_quantity_stats_without_commit(
-        StatOptions.PLAYED,
-        team_id,
-        game_id,
-        game_players_ids,
-        current_user_id,
-        create_data.is_before_system,
-        forced_quantity=forced_played_quantity,
-    )
+    if not create_data.is_before_system or forced_played_quantity:
+        GamePlayerStatWriteRepo(session).create_single_quantity_stats_without_commit(
+            StatOptions.PLAYED,
+            team_id,
+            game_id,
+            game_players_ids,
+            current_user_id,
+            create_data.is_before_system,
+            forced_quantity=forced_played_quantity,
+        )
 
     if create_data.goals_and_assists:
         GamePlayerStatWriteRepo(session).create_goals_and_assists_without_commit(
