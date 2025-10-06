@@ -59,9 +59,6 @@ async def get_players_name_and_shirt(
     session: Session = Depends(get_session),
     current_user: User = Depends(validate_user_token),
 ) -> list[PlayerNameAndShirt]:
-    if not current_user.has_admin_privileges:
-        raise AdminRequired()
-
     return service.get_all_players_only_name_and_shirt(current_user.team_id, session)
 
 
