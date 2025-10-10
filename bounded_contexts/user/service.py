@@ -100,6 +100,7 @@ def login(username: str, password: str, session: Session) -> JSONResponse:
         secure=REFRESH_TOKEN_SECURE_BOOL,
         samesite="none",
         max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+        domain=".forquilha.app.br",
     )
 
     return response
@@ -120,6 +121,7 @@ def logout(refresh_token: str, session: Session) -> JSONResponse:
         httponly=True,
         secure=REFRESH_TOKEN_SECURE_BOOL,
         samesite="none",
+        domain=".forquilha.app.br",
     )
     return response
 
@@ -137,6 +139,7 @@ def refresh_access_token(refresh_token: str, session: Session) -> JSONResponse:
             httponly=True,
             secure=REFRESH_TOKEN_SECURE_BOOL,
             samesite="none",
+            domain=".forquilha.app.br",
         )
         return response
 
@@ -156,6 +159,7 @@ def refresh_access_token(refresh_token: str, session: Session) -> JSONResponse:
             httponly=True,
             secure=REFRESH_TOKEN_SECURE_BOOL,
             samesite="none",
+            domain=".forquilha.app.br",
         )
         return response
 

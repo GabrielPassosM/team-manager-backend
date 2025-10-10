@@ -10,7 +10,7 @@ from bounded_contexts.user.schemas import UserResponse, UserResponse, UserPlayer
 from core.consts import DEMO_USER_EMAIL
 from core.services.password import verify_password
 
-client = TestClient(app)
+client = TestClient(app, base_url="https://api.forquilha.app.br")
 
 
 def test_create_user(mock_team, mock_player_gen):
@@ -274,7 +274,7 @@ def test_login_and_logout_success(mock_user_gen, count_logged_users):
     response_body = response.json()
     assert "access_token" in response_body
     UserResponse.model_validate(response_body["user"])
-    refresh_token = response.cookies.jar._cookies["testserver.local"]["/"][
+    refresh_token = response.cookies.jar._cookies[".forquilha.app.br"]["/"][
         "refresh_token"
     ].value
     assert refresh_token
@@ -313,7 +313,7 @@ def test_login_and_logout_with_demo_user(mock_user_gen, count_logged_users):
     logged_users = count_logged_users()
     assert logged_users == 1
 
-    refresh_token = response.cookies.jar._cookies["testserver.local"]["/"][
+    refresh_token = response.cookies.jar._cookies[".forquilha.app.br"]["/"][
         "refresh_token"
     ].value
     response = client.post(f"/users/logout", cookies={"refresh_token": refresh_token})
