@@ -43,6 +43,7 @@ def _populate() -> None:
             emblem_url="https://i.postimg.cc/2jKvC0WY/emblema-demo.png",
             foundation_date=date(2023, 1, 1),
             season_start_date=date(2023, 1, 1),
+            paid_until=date(2099, 1, 1),
         ),
         Championship(
             id=champ1_id,
@@ -259,6 +260,7 @@ def _populate() -> None:
             name="Tribunata FC",
             foundation_date=date(1899, 11, 29),
             season_start_date=date(2023, 1, 1),
+            paid_until=date(2099, 1, 1),
         ),
         Championship(
             team_id=team2_id,
