@@ -21,7 +21,6 @@ from bounded_contexts.user.exceptions import (
     CantUpdateAdminUser,
     CantDeleteYourself,
     PlayerAlreadyHasUser,
-    UsersLimitReached,
     CantRevokeOwnAdmin,
 )
 from bounded_contexts.user.models import User, UserPermissions
@@ -265,10 +264,6 @@ def make_user_first_access(data: FirstAccessStart, session: Session) -> str:
     if not team:
         raise TeamNotFoundByCode()
 
-    team_users_count = UserReadRepo(session=session).count_by_team_id(team.id)
-    if team_users_count >= team.max_players_or_users:
-        raise UsersLimitReached()
-
     existing_user = UserReadRepo(session=session).get_by_email(data.email)
     if existing_user and not existing_user.is_initial_user:
         raise EmailAlreadyInUse()
@@ -350,10 +345,6 @@ def create_user(user_data: UserCreate, current_user: User, session: Session) -> 
 
     if not current_user.is_super_admin and user_data.is_super_admin:
         raise SuperAdminRequired()
-
-    team_users_count = UserReadRepo(session=session).count_by_team_id(team_id)
-    if team_users_count >= team.max_players_or_users:
-        raise UsersLimitReached()
 
     if user_data.player_id and UserReadRepo(session=session).get_by_player_id(
         team_id, user_data.player_id
