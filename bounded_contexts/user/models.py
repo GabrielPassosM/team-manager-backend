@@ -15,6 +15,7 @@ class User(BaseTable, table=True):
     hashed_password: str = Field(max_length=60)
     is_admin: bool = Field(default=False)
     is_super_admin: bool = Field(default=False)
+    is_initial_user: bool = Field(default=False)
 
     player: Optional["Player"] = Relationship(back_populates="user")
     logged_user: Optional["LoggedUser"] = Relationship(
