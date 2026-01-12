@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     password: str
     is_admin: bool = False
     is_super_admin: bool = False
+    is_initial_user: bool = False
     player_id: UUID | None = None
 
     @field_validator("password", mode="before")

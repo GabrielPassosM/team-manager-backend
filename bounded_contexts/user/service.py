@@ -269,7 +269,8 @@ def make_user_first_access(data: FirstAccessStart, session: Session) -> str:
     if team_users_count >= team.max_players_or_users:
         raise UsersLimitReached()
 
-    if UserReadRepo(session=session).get_by_email(data.email):
+    existing_user = UserReadRepo(session=session).get_by_email(data.email)
+    if existing_user and not existing_user.is_initial_user:
         raise EmailAlreadyInUse()
 
     user_data = UserCreate(
@@ -279,9 +280,13 @@ def make_user_first_access(data: FirstAccessStart, session: Session) -> str:
     )
 
     hashed_password = hash_password(user_data.password)
-    user_created = UserWriteRepo(session=session).create(
-        user_data, hashed_password, team_id=team.id
-    )
+
+    if existing_user:
+        user_created = existing_user
+    else:
+        user_created = UserWriteRepo(session=session).create(
+            user_data, hashed_password, team_id=team.id
+        )
 
     token = create_jwt_token(
         data={

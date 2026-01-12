@@ -99,6 +99,7 @@ def register_new_team_and_create_base_models(
             password=str(ObjectId()),
             is_admin=True,
             is_super_admin=False,
+            is_initial_user=True,
         ),
         current_user=super_user,
         session=session,
