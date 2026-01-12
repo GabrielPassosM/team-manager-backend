@@ -53,12 +53,6 @@ class PlayerAlreadyHasUser(HTTPException):
 
 
 @dataclass
-class UsersLimitReached(HTTPException):
-    status_code = 400
-    detail = "O número máximo de usuários do time foi atingido. Atualize seu plano para adicionar mais usuários."
-
-
-@dataclass
 class CantRevokeOwnAdmin(HTTPException):
     status_code = 403
     detail = "Você não pode remover sua própria permissão de administrador. Caso realmente deseje fazer isso, entre em contato com o suporte."

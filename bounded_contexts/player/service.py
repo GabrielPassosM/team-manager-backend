@@ -40,7 +40,7 @@ def create_player(
         raise TeamNotFound()
 
     team_players_count = PlayerReadRepo(session=session).count_by_team_id(team_id)
-    if team_players_count >= team.max_players_or_users:
+    if team_players_count >= team.max_players:
         raise PlayersLimitReached()
 
     player = PlayerWriteRepo(session=session).create(

@@ -80,7 +80,7 @@ def test_create_player_with_stats_before_system(
 
 
 def test_error_create_player_max_players(mock_team_gen, mock_user_gen, mock_player_gen):
-    team = mock_team_gen(max_players_or_users=2)
+    team = mock_team_gen(max_players=2)
     team_id = team.id
     mock_user_gen(team_id=team_id, is_admin=True)
     mock_player_gen(team_id=team_id)
