@@ -4,7 +4,7 @@ from random import randint
 from uuid import uuid4, UUID
 
 import pytest
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlmodel import select
 
 from api.main import app
@@ -16,6 +16,7 @@ from bounded_contexts.game_and_stats.models import (
     GamePlayerAvailability,
     AvailabilityStatus,
 )
+from bounded_contexts.terms_of_use.models import TermsOfUse
 from core.enums import StageOptions
 from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
@@ -181,7 +182,16 @@ def mock_user_gen(db_session, mock_team):
         is_admin=True,
         is_super_admin=False,
         player: Player | None = None,
+        accept_terms: bool = True,
     ):
+        terms_accepted_version = None
+        if accept_terms:
+            active_terms_version = db_session.exec(
+                select(TermsOfUse.version).where(TermsOfUse.is_active == True)
+            ).first()
+            if active_terms_version:
+                terms_accepted_version = active_terms_version
+
         player_id = player.id if player else None
         mock = User(
             team_id=team_id or mock_team.id,
@@ -191,6 +201,7 @@ def mock_user_gen(db_session, mock_team):
             is_admin=is_admin,
             is_super_admin=is_super_admin,
             player_id=player_id,
+            terms_accepted_version=terms_accepted_version,
         )
         db_session.add(mock)
         db_session.commit()
@@ -477,6 +488,33 @@ def mock_game_player_availability_gen(db_session, mock_team, mock_game, mock_pla
             game_id=game_id or mock_game.id,
             player_id=player_id or mock_player.id,
             status=status,
+        )
+        db_session.add(mock)
+        db_session.commit()
+        db_session.refresh(mock)
+        return mock
+
+    yield _make_mock
+
+
+@pytest.fixture(scope="function")
+def mock_terms_of_use_gen(db_session):
+    def _make_mock(
+        version: int = 1,
+        content: str = "These are the terms of use.",
+        is_active: bool = False,
+    ):
+        if is_active:
+            db_session.exec(
+                update(TermsOfUse)
+                .where(TermsOfUse.is_active == True)
+                .values(is_active=False)
+            )
+
+        mock = TermsOfUse(
+            version=version,
+            content=content,
+            is_active=is_active,
         )
         db_session.add(mock)
         db_session.commit()

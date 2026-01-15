@@ -11,6 +11,7 @@ from bounded_contexts.game_and_stats.models import (
     GamePlayerStat,
     StatOptions,
 )
+from bounded_contexts.terms_of_use.models import TermsOfUse
 from core.enums import StageOptions
 from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
@@ -44,6 +45,11 @@ def _populate() -> None:
             foundation_date=date(2023, 1, 1),
             season_start_date=date(2023, 1, 1),
             paid_until=date(2099, 1, 1),
+        ),
+        TermsOfUse(
+            version=1,
+            content="Isso é um termo de uso teste. Favor aceitar. Grato",
+            is_active=True,
         ),
         Championship(
             id=champ1_id,

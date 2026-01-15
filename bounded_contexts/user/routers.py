@@ -16,10 +16,9 @@ from bounded_contexts.user.schemas import (
     FirstAccessConfirmation,
 )
 from core.exceptions import AdminRequired, SuperAdminRequired
-from core.services.auth import create_jwt_token, validate_user_token
-from core.settings import REFRESH_TOKEN_SECURE_BOOL
+from core.services.auth import validate_user_token
 from infra.database import get_session
-from libs.datetime import utcnow
+
 
 router = APIRouter(prefix="/users", tags=["User"])
 

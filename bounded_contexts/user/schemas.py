@@ -51,6 +51,7 @@ class UserResponse(BaseSchema):
 class LoginResponse(BaseModel):
     access_token: str
     user: UserResponse
+    terms_version_to_accept: int | None
 
 
 class ForgotPasswordRequest(BaseModel):
