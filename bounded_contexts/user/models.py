@@ -16,6 +16,7 @@ class User(BaseTable, table=True):
     is_admin: bool = Field(default=False)
     is_super_admin: bool = Field(default=False)
     is_initial_user: bool = Field(default=False)
+    terms_accepted_version: int | None = Field(default=None)
 
     player: Optional["Player"] = Relationship(back_populates="user")
     logged_user: Optional["LoggedUser"] = Relationship(

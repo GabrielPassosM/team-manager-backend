@@ -1,11 +1,13 @@
 from collections import defaultdict
 from datetime import date, timedelta
+from pathlib import Path
 from uuid import UUID
 
 from bson import ObjectId
 from fastapi import HTTPException
 from sqlmodel import Session
 
+from api.terms_of_use_htmls.current_version import TERMS_VERSION, TERMS_OF_USE_HTML
 from bounded_contexts.championship.repo import ChampionshipReadRepo
 from bounded_contexts.championship.schemas import (
     ChampionshipCreate,
@@ -28,6 +30,7 @@ from bounded_contexts.team.schemas import (
     CurrentTeamResponse,
 )
 from bounded_contexts.team.service import team_code_generator
+from bounded_contexts.terms_of_use.repo import TermsOfUseReadRepo, TermsOfUseWriteRepo
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
 from bounded_contexts.user.schemas import UserCreate, UserResponse
@@ -36,6 +39,7 @@ from core.settings import (
     FRIENDLY_CHAMPIONSHIP_NAME,
     SUPER_USER_PWD,
     BEFORE_SYSTEM_CHAMPIONSHIP_NAME,
+    MIGRATIONS_PWD,
 )
 from libs.datetime import add_or_subtract_months_to_date, brasilia_now
 
@@ -174,3 +178,40 @@ def renew_teams_subscription(
     session.commit()
 
     return RenewSubscriptionResponse(renewed_info=renewed_info)
+
+
+def publish_terms_of_use(
+    password: str,
+    session: Session,
+):
+    if password != MIGRATIONS_PWD:
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+    version_to_create = TERMS_VERSION
+
+    if TermsOfUseReadRepo(session).get_by_version(version_to_create):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Terms of Use version {version_to_create} already exists.",
+        )
+
+    today = brasilia_now().date()
+    content = (
+        TERMS_OF_USE_HTML.replace("{dia}", str(today.day))
+        .replace("{mes}", str(today.month))
+        .replace("{ano}", str(today.year))
+    )
+
+    try:
+        TermsOfUseWriteRepo(session).deactivate_current_without_commit()
+        TermsOfUseWriteRepo(session).create_without_commit(
+            content=content,
+            version=version_to_create,
+        )
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while publishing Terms of Use: {str(e)}",
+        )

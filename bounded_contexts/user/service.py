@@ -14,6 +14,7 @@ from bounded_contexts.team.exceptions import (
     TeamNotFoundByCode,
 )
 from bounded_contexts.team.repo import TeamReadRepo
+from bounded_contexts.terms_of_use.repo import TermsOfUseReadRepo
 from bounded_contexts.user.exceptions import (
     UserNotFound,
     EmailAlreadyInUse,
@@ -70,6 +71,13 @@ def login(username: str, password: str, session: Session) -> JSONResponse:
     if team.paid_until < utcnow().date():
         raise TeamSubscriptionExpired(is_admin=user.has_admin_privileges)
 
+    terms_version_to_accept = None
+    active_terms_version = TermsOfUseReadRepo(session).get_active_version()
+    if not user.terms_accepted_version or (
+        active_terms_version and user.terms_accepted_version < active_terms_version
+    ):
+        terms_version_to_accept = active_terms_version
+
     access_token = create_jwt_token(
         data={
             "sub": str(user.id),
@@ -77,11 +85,10 @@ def login(username: str, password: str, session: Session) -> JSONResponse:
         }
     )
 
-    refresh_token = create_logged_user(user.id, is_demo_user, session)
-
     response_data = LoginResponse(
         access_token=access_token,
         user=UserResponse.model_validate(user),
+        terms_version_to_accept=terms_version_to_accept,
     ).model_dump()
 
     response_data["user"]["id"] = str(response_data["user"]["id"])
@@ -92,6 +99,11 @@ def login(username: str, password: str, session: Session) -> JSONResponse:
         )
 
     response = JSONResponse(content=response_data)
+    if terms_version_to_accept:
+        return response
+
+    refresh_token = create_logged_user(user.id, is_demo_user, session)
+
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,

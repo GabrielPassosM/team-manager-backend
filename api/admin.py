@@ -55,3 +55,15 @@ async def renew_subscription(
         raise SuperAdminRequired()
 
     return service.renew_teams_subscription(renew_data, session, current_user.id)
+
+
+@router.post("/publish-terms-of-use/{password}", status_code=201)
+async def publish_terms_of_use(
+    password: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(validate_user_token),
+):
+    if not current_user.is_super_admin:
+        raise SuperAdminRequired()
+
+    return service.publish_terms_of_use(password, session)

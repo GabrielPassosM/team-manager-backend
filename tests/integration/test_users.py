@@ -257,7 +257,7 @@ def test_delete_user(mock_user_gen):
     assert response.json()["detail"] == "Usuário não encontrado no sistema"
 
 
-def test_login_and_logout_success(mock_user_gen, count_logged_users):
+def test_login_and_logout_success(clean_db, mock_user_gen, count_logged_users):
     # 1 - login
     user = mock_user_gen(password="1234")
     data = {
