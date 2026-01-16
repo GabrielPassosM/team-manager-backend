@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
+from starlette.responses import JSONResponse
 
 from bounded_contexts.terms_of_use import service
 from bounded_contexts.terms_of_use.schemas import AcceptTermsData, TermsOfUseResponse
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/terms_of_use", tags=["Terms of Use"])
 @router.post("/accept", status_code=200)
 async def accept_terms_of_use(
     acceptance_data: AcceptTermsData, session: Session = Depends(get_session)
-) -> None:
+) -> JSONResponse:
     return service.accept_terms_of_use(acceptance_data, session)
 
 

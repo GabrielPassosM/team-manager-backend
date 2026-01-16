@@ -7,6 +7,7 @@ from core.schemas import BaseSchema
 
 class AcceptTermsData(BaseModel):
     user_id: UUID
+    is_demo_user: bool
     terms_version: int
 
 

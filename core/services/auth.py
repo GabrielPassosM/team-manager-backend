@@ -1,13 +1,23 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
+from uuid import UUID
+
 from jose import jwt, JWTError
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session
+from starlette.responses import JSONResponse
 
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
-from core.settings import ACCESS_TOKEN_EXPIRE_MINUTES, JWT_ALGORITHM, JWT_KEY
+from core.settings import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    JWT_ALGORITHM,
+    JWT_KEY,
+    REFRESH_TOKEN_SECURE_BOOL,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+    ENV_CONFIG,
+)
 from infra.database import get_session
 
 security = HTTPBearer()
@@ -69,3 +79,33 @@ def general_validade_token(
         if raise_custom_error:
             raise InvalidToken()
         raise
+
+
+def create_refresh_token(
+    response: JSONResponse, user_id: UUID, is_demo_user: bool, session: Session
+) -> JSONResponse:
+    from bounded_contexts.user.service import create_logged_user
+
+    refresh_token = create_logged_user(user_id, is_demo_user, session)
+
+    if ENV_CONFIG == "production":
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=REFRESH_TOKEN_SECURE_BOOL,
+            samesite="none",
+            max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+            domain=".forquilha.app.br",
+        )
+    else:
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+        )
+
+    return response

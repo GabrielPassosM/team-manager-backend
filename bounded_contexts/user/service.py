@@ -38,14 +38,18 @@ from bounded_contexts.user.schemas import (
 )
 from core.consts import DEMO_USER_EMAIL
 from core.exceptions import AdminRequired, SuperAdminRequired
-from core.services.auth import create_jwt_token, general_validade_token, InvalidToken
+from core.services.auth import (
+    create_jwt_token,
+    general_validade_token,
+    InvalidToken,
+    create_refresh_token,
+)
 from core.services.email import send_email
 from core.services.password import verify_password, hash_password
 from core.settings import (
     FRONTEND_URL,
     ENV_CONFIG,
     REFRESH_TOKEN_SECURE_BOOL,
-    REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from libs.datetime import utcnow
 
@@ -89,32 +93,15 @@ def login(username: str, password: str, session: Session) -> JSONResponse:
         access_token=access_token,
         user=UserResponse.model_validate(user),
         terms_version_to_accept=terms_version_to_accept,
-    ).model_dump()
-
-    response_data["user"]["id"] = str(response_data["user"]["id"])
-    response_data["user"]["team_id"] = str(response_data["user"]["team_id"])
-    if response_data["user"].get("player"):
-        response_data["user"]["player"]["id"] = str(
-            response_data["user"]["player"]["id"]
-        )
+        is_demo_user=is_demo_user,
+    ).model_dump(mode="json")
 
     response = JSONResponse(content=response_data)
     if terms_version_to_accept:
         return response
 
-    refresh_token = create_logged_user(user.id, is_demo_user, session)
-
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=REFRESH_TOKEN_SECURE_BOOL,
-        samesite="none",
-        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
-        domain=".forquilha.app.br",
-    )
-
-    return response
+    # Only create refresh token if user has already accepted terms
+    return create_refresh_token(response, user.id, is_demo_user, session)
 
 
 def logout(refresh_token: str, session: Session) -> JSONResponse:
