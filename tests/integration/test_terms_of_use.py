@@ -26,6 +26,7 @@ def test_verify_and_accept_terms_of_use_on_login(mock_user_gen, mock_terms_of_us
         json={
             "terms_version": terms_version_to_accept,
             "user_id": str(user.id),
+            "is_demo_user": False,
         },
     )
     assert response.status_code == 200

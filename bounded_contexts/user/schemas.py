@@ -52,6 +52,7 @@ class LoginResponse(BaseModel):
     access_token: str
     user: UserResponse
     terms_version_to_accept: int | None
+    is_demo_user: bool
 
 
 class ForgotPasswordRequest(BaseModel):
