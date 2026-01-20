@@ -4,7 +4,6 @@ from zoneinfo import ZoneInfo
 
 from libs.base_types.interval import Interval
 
-
 UTC = timezone.utc
 BRT = timezone(timedelta(hours=-3))
 
