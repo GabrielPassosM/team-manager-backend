@@ -5,7 +5,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel, Session
 
-
 DATABASE_FILE = "test_database.db"
 TEST_DATABASE_URL = f"sqlite:///{DATABASE_FILE}"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})

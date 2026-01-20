@@ -11,7 +11,6 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision: str = "963b86282604"
 down_revision: Union[str, None] = "ac06307cc7e8"
@@ -20,13 +19,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute(
-        """
+    op.execute("""
         CREATE UNIQUE INDEX uq_championship_team_id_name_active
         ON championship (team_id, name)
         WHERE NOT deleted
-    """
-    )
+    """)
 
 
 def downgrade() -> None:
