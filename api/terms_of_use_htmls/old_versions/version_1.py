@@ -1,4 +1,4 @@
-TERMS_VERSION = 2
+TERMS_VERSION = 1
 
 TERMS_OF_USE_HTML = """
 <!DOCTYPE html>
@@ -85,32 +85,25 @@ TERMS_OF_USE_HTML = """
       O Forquilha não se responsabiliza por decisões tomadas com base nos dados da plataforma,
       perdas causadas por falhas técnicas ou conflitos entre membros de um time.
     </p>
-    
-    <h2>9. Compartilhamento de informações</h2>
-    <p>
-      O Forquilha permite que usuários compartilhem, de forma voluntária, algumas informações da plataforma em redes sociais ou aplicativos de terceiros.
-      O compartilhamento ocorre somente mediante ação do próprio usuário. Ao utilizar essa funcionalidade, o usuário declara estar ciente de que as informações compartilhadas poderão se tornar públicas e estarão sujeitas às políticas e regras das plataformas externas.
-      O Forquilha não se responsabiliza pelo uso, reprodução ou divulgação dessas informações por terceiros após o compartilhamento.
-    </p>
 
-    <h2>10. Direitos da plataforma</h2>
+    <h2>9. Direitos da plataforma</h2>
     <p>
       Todo o conteúdo visual, marca, nome e sistema do Forquilha são de sua propriedade.
       Não é permitido copiar, modificar ou distribuir sem autorização.
     </p>
 
-    <h2>11. Encerramento de conta</h2>
+    <h2>10. Encerramento de conta</h2>
     <ul>
       <li>Você pode solicitar o encerramento da sua conta a qualquer momento;</li>
       <li>O Forquilha pode encerrar contas que violem estes Termos.</li>
     </ul>
 
-    <h2>12. Alterações nos Termos</h2>
+    <h2>11. Alterações nos Termos</h2>
     <p>
       Estes Termos podem ser atualizados. Será necessário aceitar os novos termos para continuar usando a plataforma.
     </p>
 
-    <h2>13. Lei aplicável</h2>
+    <h2>12. Lei aplicável</h2>
     <p>
       Estes Termos seguem as leis da República Federativa do Brasil.
     </p>
