@@ -9,6 +9,7 @@ from api.htmls.index_html import INDEX_HTML
 from core import settings
 from api.admin import router as admin_router
 from api.healthcheck import router as healthcheck_router
+from api.cron import router as cron_router
 from bounded_contexts.team.routers import router as team_router
 from bounded_contexts.user.routers import router as user_router
 from bounded_contexts.storage.routers import router as storage_router
@@ -57,6 +58,7 @@ app.include_router(game_router)
 app.include_router(stats_router)
 app.include_router(availability_router)
 app.include_router(terms_router)
+app.include_router(cron_router)
 
 
 @app.exception_handler(Exception)
