@@ -3,6 +3,6 @@ from fastapi import APIRouter, Depends
 router = APIRouter(prefix="/cron", tags=["Cronjobs"])
 
 
-@router.post("/test")
+@router.get("/test")
 def test_cron():
     return {"status": "ok"}
