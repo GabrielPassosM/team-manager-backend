@@ -51,7 +51,7 @@ from core.settings import (
     ENV_CONFIG,
     REFRESH_TOKEN_SECURE_BOOL,
 )
-from libs.datetime import utcnow
+from libs.datetime import utcnow, brasilia_now
 
 
 def login(username: str, password: str, session: Session) -> JSONResponse:
@@ -72,7 +72,7 @@ def login(username: str, password: str, session: Session) -> JSONResponse:
         )
 
     team = user.team
-    if team.paid_until < utcnow().date():
+    if team.paid_until < brasilia_now().date():
         raise TeamSubscriptionExpired(is_admin=user.has_admin_privileges)
 
     terms_version_to_accept = None
