@@ -1,5 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import time_machine
 from fastapi.testclient import TestClient
@@ -329,7 +330,7 @@ def test_login_fail(mock_user_gen):
     assert response.json()["detail"] == "Email ou senha incorretos"
 
 
-@time_machine.travel("2025-05-02")
+@time_machine.travel(datetime(2025, 5, 2, 0, 0, tzinfo=ZoneInfo("America/Sao_Paulo")))
 def test_login_fail_expired_paid_until(mock_team_gen, mock_user_gen):
     team = mock_team_gen(paid_until=date(2025, 5, 1))
 
