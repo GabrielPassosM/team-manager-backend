@@ -16,7 +16,7 @@ from core.enums import StageOptions
 from bounded_contexts.player.models import Player, PlayerPositions
 from bounded_contexts.team.models import Team
 from bounded_contexts.user.models import User
-from core.consts import DEMO_USER_EMAIL
+from core.consts import DEMO_USER_EMAIL, DEMO_TEAM_NAME
 from core.services.password import hash_password
 from core.settings import FRIENDLY_CHAMPIONSHIP_NAME, BEFORE_SYSTEM_CHAMPIONSHIP_NAME
 from infra.database import get_session
@@ -40,7 +40,7 @@ def _populate() -> None:
     team1_mocks = [
         Team(
             id=team1_id,
-            name="Demo FC",
+            name=DEMO_TEAM_NAME,
             emblem_url="https://i.postimg.cc/2jKvC0WY/emblema-demo.png",
             foundation_date=date(2023, 1, 1),
             season_start_date=date(2023, 1, 1),

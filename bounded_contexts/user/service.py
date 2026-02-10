@@ -23,6 +23,8 @@ from bounded_contexts.user.exceptions import (
     CantDeleteYourself,
     PlayerAlreadyHasUser,
     CantRevokeOwnAdmin,
+    CantCreateUserOnDemoTeam,
+    CantUpdateUserEmailOnDemoTeam,
 )
 from bounded_contexts.user.models import User, UserPermissions
 from bounded_contexts.user.logged_user.models import LoggedUser
@@ -36,7 +38,7 @@ from bounded_contexts.user.schemas import (
     FirstAccessStart,
     FirstAccessConfirmation,
 )
-from core.consts import DEMO_USER_EMAIL
+from core.consts import DEMO_USER_EMAIL, DEMO_TEAM_NAME
 from core.exceptions import AdminRequired, SuperAdminRequired
 from core.services.auth import (
     create_jwt_token,
@@ -342,6 +344,9 @@ def create_user(user_data: UserCreate, current_user: User, session: Session) -> 
     if not team:
         raise TeamNotFound()
 
+    if team.name == DEMO_TEAM_NAME and not current_user.is_super_admin:
+        raise CantCreateUserOnDemoTeam()
+
     if not current_user.is_super_admin and user_data.is_super_admin:
         raise SuperAdminRequired()
 
@@ -367,7 +372,12 @@ def update_user(
     if not user_to_update:
         raise UserNotFound()
 
-    _validate_update_request(current_user, user_to_update, update_data)
+    team_id = current_user.team_id
+    team = TeamReadRepo(session=session).get_by_id(team_id)
+    if not team:
+        raise TeamNotFound()
+
+    _validate_update_request(current_user, user_to_update, update_data, team.name)
 
     if update_data.email != user_to_update.email and UserReadRepo(
         session=session
@@ -400,10 +410,16 @@ def update_user(
 
 
 def _validate_update_request(
-    current_user: User, user_to_update: User, update_data: UserUpdate
+    current_user: User,
+    user_to_update: User,
+    update_data: UserUpdate,
+    team_name: str = "",
 ) -> None:
     if current_user.is_super_admin:
         return
+
+    if team_name == DEMO_TEAM_NAME and user_to_update.email != update_data.email:
+        raise CantUpdateUserEmailOnDemoTeam()
 
     # ---- Non admin users ----
     if not current_user.has_admin_privileges:

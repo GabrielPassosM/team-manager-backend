@@ -56,3 +56,15 @@ class PlayerAlreadyHasUser(HTTPException):
 class CantRevokeOwnAdmin(HTTPException):
     status_code = 403
     detail = "Você não pode remover sua própria permissão de administrador. Caso realmente deseje fazer isso, entre em contato com o suporte."
+
+
+@dataclass
+class CantCreateUserOnDemoTeam(HTTPException):
+    status_code = 400
+    detail = "Não é permitido criar usuários no time de demonstração."
+
+
+@dataclass
+class CantUpdateUserEmailOnDemoTeam(HTTPException):
+    status_code = 400
+    detail = "Não é permitido atualizar o e-mail dos usuários do time de demonstração."

@@ -28,3 +28,11 @@ class TeamSubscriptionExpired(HTTPException):
             self.detail += (
                 " Entre em contato com um administrador do seu time para renová-la."
             )
+
+
+@dataclass
+class CantEditSomeDemoTeamAttributes(HTTPException):
+    status_code = 400
+    detail = (
+        "Só é possível editar as datas da temporada e a cor do time de demonstração."
+    )
