@@ -71,6 +71,7 @@ def login(username: str, password: str, session: Session) -> JSONResponse:
             ),
             current_user=user,
             session=session,
+            is_login=True,
         )
 
     team = user.team
@@ -338,13 +339,15 @@ def confirm_user_first_access(data: FirstAccessConfirmation, session: Session) -
         logger.exception(f"Error sending password reseted email: {e}")
 
 
-def create_user(user_data: UserCreate, current_user: User, session: Session) -> User:
+def create_user(
+    user_data: UserCreate, current_user: User, session: Session, is_login: bool = False
+) -> User:
     team_id = current_user.team_id
     team = TeamReadRepo(session=session).get_by_id(team_id)
     if not team:
         raise TeamNotFound()
 
-    if team.name == DEMO_TEAM_NAME and not current_user.is_super_admin:
+    if team.name == DEMO_TEAM_NAME and not current_user.is_super_admin and not is_login:
         raise CantCreateUserOnDemoTeam()
 
     if not current_user.is_super_admin and user_data.is_super_admin:
