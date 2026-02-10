@@ -4,7 +4,10 @@ import string
 from loguru import logger
 
 from api.htmls.intention_email import HTML_INTENTION_EMAIL
-from bounded_contexts.team.exceptions import TeamNotFound
+from bounded_contexts.team.exceptions import (
+    TeamNotFound,
+    CantEditSomeDemoTeamAttributes,
+)
 from bounded_contexts.team.models import Team
 from bounded_contexts.team.repo import (
     TeamWriteRepo,
@@ -24,6 +27,7 @@ from sqlmodel import Session
 from bounded_contexts.user.exceptions import EmailAlreadyInUse
 from bounded_contexts.user.models import User
 from bounded_contexts.user.repo import UserReadRepo
+from core.consts import DEMO_TEAM_NAME
 from core.services.email import send_email
 from core.settings import ENV_CONFIG
 
@@ -58,6 +62,16 @@ def update_team(current_user: User, team_data: TeamUpdate, session: Session) -> 
         ]
     ):
         return team
+
+    if team.name == DEMO_TEAM_NAME and not current_user.is_super_admin:
+        if any(
+            [
+                team.name != team_data.name,
+                team.emblem_url != team_data.emblem_url,
+                team.foundation_date != team_data.foundation_date,
+            ]
+        ):
+            raise CantEditSomeDemoTeamAttributes()
 
     updated_team = TeamWriteRepo(session=session).update(
         team, team_data, current_user.id
