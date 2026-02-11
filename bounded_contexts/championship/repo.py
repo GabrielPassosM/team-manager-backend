@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import ColumnElement
+from sqlalchemy import ColumnElement, delete
 
 from bounded_contexts.championship.models import (
     Championship,
@@ -58,6 +58,12 @@ class ChampionshipWriteRepo(BaseRepo):
         championship.updated_at = utcnow()
         championship.updated_by = current_user_id
         self.session.merge(championship)
+        self.session.commit()
+
+    def hard_delete_all_by_team_id(self, team_id: UUID) -> None:
+        self.session.exec(
+            delete(Championship).where(Championship.team_id == team_id)  # type: ignore
+        )
         self.session.commit()
 
 

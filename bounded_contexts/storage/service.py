@@ -42,3 +42,19 @@ def _make_upload(file_path: str, file_content: bytes, content_type: str) -> str:
 
     public_url = supabase.storage.from_(TEAMS_BUCKET).get_public_url(file_path)
     return public_url
+
+
+def delete_all_players_images(team_id: str) -> None:
+    folder_path = f"{team_id}/players"
+
+    response = supabase.storage.from_(TEAMS_BUCKET).list(folder_path)
+
+    if not response:
+        return
+
+    files_to_remove = [
+        f"{folder_path}/{file['name']}" for file in response if file.get("name")
+    ]
+
+    if files_to_remove:
+        supabase.storage.from_(TEAMS_BUCKET).remove(files_to_remove)

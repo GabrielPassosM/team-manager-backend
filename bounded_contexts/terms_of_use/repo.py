@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy import delete
 from sqlmodel import select
 
 from bounded_contexts.terms_of_use.models import TermsOfUse, UserTermsAcceptance
@@ -54,3 +55,10 @@ class UserTermsAcceptanceWriteRepo(BaseRepo):
             terms_version=terms_version,
         )
         self.session.add(acceptance)
+
+    def hard_delete_by_user_ids(self, user_ids: list[UUID]) -> None:
+        self.session.exec(
+            delete(UserTermsAcceptance).where(  # type: ignore
+                UserTermsAcceptance.user_id.in_(user_ids)
+            )
+        )
