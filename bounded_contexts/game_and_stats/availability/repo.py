@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from sqlmodel import select
-from sqlalchemy import func
+from sqlalchemy import func, delete
 
 from bounded_contexts.game_and_stats.availability.schemas import (
     GamePlayerAvailabilityCreate,
@@ -83,6 +83,14 @@ class AvailabilityWriteRepo(BaseRepo):
         availability.updated_at = utcnow()
         availability.updated_by = current_user_id
         self.session.merge(availability)
+        self.session.commit()
+
+    def hard_delete_all_by_team_id(self, team_id: UUID) -> None:
+        self.session.exec(
+            delete(GamePlayerAvailability).where(
+                GamePlayerAvailability.team_id == team_id  # type: ignore
+            )
+        )
         self.session.commit()
 
 

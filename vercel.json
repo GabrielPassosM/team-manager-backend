@@ -13,8 +13,8 @@
     ],
     "crons": [
     {
-      "path": "/cron/test",
-      "schedule": "30 23 * * *"
+      "path": "/cron/reset-demo-team-data",
+      "schedule": "0 6 * * *"
     }
   ]
 }

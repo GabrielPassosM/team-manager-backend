@@ -1,4 +1,3 @@
-from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import delete, func, desc, asc
@@ -161,6 +160,14 @@ class GamePlayerStatWriteRepo(BaseRepo):
             stat.updated_by = current_user_id
             self.session.merge(stat)
         self.session.flush()
+
+    def hard_delete_all_by_team_id(self, team_id: UUID) -> None:
+        self.session.exec(
+            delete(GamePlayerStat).where(
+                GamePlayerStat.team_id == team_id  # type: ignore
+            )
+        )
+        self.session.commit()
 
 
 class GamePlayerStatReadRepo(BaseRepo):

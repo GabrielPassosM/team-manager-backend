@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import func, delete
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
@@ -59,6 +59,10 @@ class GameWriteRepo(BaseRepo):
         game.updated_by = current_user_id
         self.session.merge(game)
         self.session.flush()
+
+    def hard_delete_all_by_team_id(self, team_id: UUID) -> None:
+        self.session.exec(delete(Game).where(Game.team_id == team_id))  # type: ignore
+        self.session.commit()
 
 
 class GameReadRepo(BaseRepo):

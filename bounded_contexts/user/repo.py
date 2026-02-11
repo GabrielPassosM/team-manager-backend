@@ -7,7 +7,7 @@ from core.repo import BaseRepo
 
 from uuid import UUID
 from sqlmodel import select
-from sqlalchemy import func
+from sqlalchemy import func, delete
 
 from core.services.password import hash_password
 from core.settings import REFRESH_TOKEN_EXPIRE_DAYS
@@ -112,6 +112,16 @@ class UserWriteRepo(BaseRepo):
         user.updated_by = current_user_id
         self.session.merge(user)
         self.session.flush()
+
+    def hard_delete_logged_users_by_user_ids(self, user_ids: list[UUID]) -> None:
+        self.session.exec(
+            delete(LoggedUser).where(LoggedUser.id.in_(user_ids))  # type: ignore
+        )
+        self.session.commit()
+
+    def hard_delete_by_user_ids(self, user_ids: list[UUID]) -> None:
+        self.session.exec(delete(User).where(User.id.in_(user_ids)))  # type: ignore
+        self.session.commit()
 
 
 class UserReadRepo(BaseRepo):
@@ -234,3 +244,13 @@ class UserReadRepo(BaseRepo):
                 User.deleted == False,
             )
         ).one()
+
+    def get_ids_by_team_id(self, team_id: UUID) -> list[UUID]:
+        return list(
+            self.session.exec(
+                select(User.id).where(
+                    User.team_id == team_id,
+                    User.deleted == False,
+                )
+            ).all()
+        )

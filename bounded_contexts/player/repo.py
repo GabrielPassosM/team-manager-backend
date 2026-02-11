@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.orm import selectinload
-from sqlalchemy import func, desc, asc, case
+from sqlalchemy import func, desc, asc, case, delete
 from sqlmodel import select
 
 from bounded_contexts.championship.repo import ChampionshipReadRepo
@@ -79,6 +79,12 @@ class PlayerWriteRepo(BaseRepo):
         player.updated_at = utcnow()
         player.updated_by = current_user_id
         self.session.merge(player)
+        self.session.commit()
+
+    def hard_delete_all_by_team_id(self, team_id: UUID) -> None:
+        self.session.exec(
+            delete(Player).where(Player.team_id == team_id)  # type: ignore
+        )
         self.session.commit()
 
 
